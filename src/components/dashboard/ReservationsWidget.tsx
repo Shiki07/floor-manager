@@ -20,7 +20,7 @@ const reservations: Reservation[] = [
 
 export function ReservationsWidget() {
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "400ms" }}>
+    <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in" style={{ animationDelay: "400ms" }}>
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-display text-lg font-semibold text-foreground">Upcoming Reservations</h3>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -33,7 +33,7 @@ export function ReservationsWidget() {
         {reservations.map((res, index) => (
           <div
             key={res.id}
-            className="flex items-center gap-4 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors animate-slide-in opacity-0"
+            className="flex items-center gap-4 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors animate-slide-in"
             style={{ animationDelay: `${500 + index * 100}ms` }}
           >
             <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">

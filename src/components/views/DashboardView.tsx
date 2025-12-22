@@ -11,7 +11,7 @@ export function DashboardView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="animate-fade-in opacity-0">
+      <div className="animate-fade-in">
         <h1 className="font-display text-3xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground mt-1">Welcome back! Here's what's happening today.</p>
       </div>

@@ -19,7 +19,7 @@ const lowStockItems: InventoryItem[] = [
 
 export function InventoryAlerts() {
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "500ms" }}>
+    <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in" style={{ animationDelay: "500ms" }}>
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-display text-lg font-semibold text-foreground">Low Stock Alerts</h3>
         <span className="flex items-center gap-1 text-sm text-destructive">
@@ -32,7 +32,7 @@ export function InventoryAlerts() {
         {lowStockItems.map((item, index) => (
           <div
             key={item.id}
-            className="flex items-center gap-4 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors animate-slide-in opacity-0"
+            className="flex items-center gap-4 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors animate-slide-in"
             style={{ animationDelay: `${600 + index * 100}ms` }}
           >
             <div

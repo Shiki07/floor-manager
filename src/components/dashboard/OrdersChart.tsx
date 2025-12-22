@@ -17,7 +17,7 @@ const data = [
 
 export function OrdersChart() {
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "350ms" }}>
+    <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in" style={{ animationDelay: "350ms" }}>
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-display text-lg font-semibold text-foreground">Orders Today</h3>
         <span className="text-sm text-muted-foreground">
