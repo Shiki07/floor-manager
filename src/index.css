@@ -177,3 +177,10 @@
 .stagger-3 { animation-delay: 0.3s; }
 .stagger-4 { animation-delay: 0.4s; }
 .stagger-5 { animation-delay: 0.5s; }
+
+/* Safety: never allow entrance animations to make content permanently invisible
+   (e.g. when a browser/extension disables animations). */
+.animate-fade-in.opacity-0,
+.animate-slide-in.opacity-0 {
+  opacity: 1 !important;
+}
