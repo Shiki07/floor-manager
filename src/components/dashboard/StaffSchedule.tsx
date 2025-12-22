@@ -20,7 +20,7 @@ const staffData: StaffMember[] = [
 
 export function StaffSchedule() {
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "300ms" }}>
+    <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in" style={{ animationDelay: "300ms" }}>
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-display text-lg font-semibold text-foreground">Today's Staff</h3>
         <span className="text-sm text-muted-foreground">
@@ -32,7 +32,7 @@ export function StaffSchedule() {
         {staffData.map((staff, index) => (
           <div
             key={staff.id}
-            className="flex items-center gap-4 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors animate-slide-in opacity-0"
+            className="flex items-center gap-4 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors animate-slide-in"
             style={{ animationDelay: `${400 + index * 100}ms` }}
           >
             <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">

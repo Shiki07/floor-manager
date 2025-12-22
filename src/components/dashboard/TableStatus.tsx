@@ -37,7 +37,7 @@ export function TableStatus() {
   };
 
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "450ms" }}>
+    <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in" style={{ animationDelay: "450ms" }}>
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-display text-lg font-semibold text-foreground">Floor Plan</h3>
         <div className="flex gap-4 text-xs">
@@ -52,7 +52,7 @@ export function TableStatus() {
           <button
             key={table.id}
             className={cn(
-              "relative p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 animate-fade-in opacity-0",
+              "relative p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 animate-fade-in",
               statusColors[table.status]
             )}
             style={{ animationDelay: `${550 + index * 50}ms` }}
