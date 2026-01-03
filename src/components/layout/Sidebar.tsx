@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
   Users,
@@ -11,7 +12,9 @@ import {
   ChefHat,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
   activeTab: string;
@@ -30,6 +33,15 @@ const menuItems = [
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const { user, userRole, signOut } = useAuth();
+
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  const roleLabel = userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : 'Staff';
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <aside
@@ -92,15 +104,24 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         <div className="border-t border-sidebar-border p-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center">
-              <span className="text-sm font-semibold text-foreground">JD</span>
+              <span className="text-sm font-semibold text-foreground">{initials}</span>
             </div>
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">John Doe</p>
-                <p className="text-xs text-muted-foreground truncate">Manager</p>
+                <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+                <p className="text-xs text-muted-foreground truncate">{roleLabel}</p>
               </div>
             )}
           </div>
+          <Button
+            variant="ghost"
+            size={collapsed ? "icon" : "default"}
+            onClick={handleSignOut}
+            className={cn("mt-3 w-full text-muted-foreground hover:text-foreground", collapsed && "px-0")}
+          >
+            <LogOut className="h-4 w-4" />
+            {!collapsed && <span className="ml-2">Sign Out</span>}
+          </Button>
         </div>
       </div>
     </aside>
