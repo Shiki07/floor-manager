@@ -1,39 +1,28 @@
 import { useState } from "react";
-import { Plus, Search, Filter, AlertTriangle, TrendingDown, Package, ShoppingCart } from "lucide-react";
+import { Plus, Search, Filter, AlertTriangle, Package, ShoppingCart, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useInventoryItems, useCreateInventoryItem, useUpdateInventoryItem, useDeleteInventoryItem } from "@/hooks/useInventoryItems";
+import { InventoryItemDialog } from "@/components/dialogs/InventoryItemDialog";
+import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog";
+import { Tables } from "@/integrations/supabase/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface InventoryItem {
-  id: string;
-  name: string;
-  category: string;
-  current: number;
-  minimum: number;
-  maximum: number;
-  unit: string;
-  costPerUnit: number;
-  supplier: string;
-  lastOrdered: string;
-}
+type InventoryItem = Tables<"inventory_items">;
 
 const categories = ["All", "Proteins", "Produce", "Dairy", "Dry Goods", "Beverages", "Supplies"];
-
-const inventoryItems: InventoryItem[] = [
-  { id: "1", name: "Salmon Fillet", category: "Proteins", current: 5, minimum: 15, maximum: 40, unit: "lbs", costPerUnit: 18.99, supplier: "Ocean Fresh", lastOrdered: "2024-01-10" },
-  { id: "2", name: "Ribeye Steak", category: "Proteins", current: 25, minimum: 20, maximum: 50, unit: "lbs", costPerUnit: 24.99, supplier: "Prime Meats", lastOrdered: "2024-01-12" },
-  { id: "3", name: "Fresh Basil", category: "Produce", current: 12, minimum: 25, maximum: 50, unit: "bunches", costPerUnit: 2.50, supplier: "Green Valley", lastOrdered: "2024-01-14" },
-  { id: "4", name: "Heavy Cream", category: "Dairy", current: 8, minimum: 10, maximum: 25, unit: "quarts", costPerUnit: 4.99, supplier: "Dairy Direct", lastOrdered: "2024-01-13" },
-  { id: "5", name: "Olive Oil", category: "Dry Goods", current: 6, minimum: 10, maximum: 20, unit: "liters", costPerUnit: 15.99, supplier: "Mediterranean Imports", lastOrdered: "2024-01-08" },
-  { id: "6", name: "House Red Wine", category: "Beverages", current: 8, minimum: 20, maximum: 50, unit: "bottles", costPerUnit: 12.99, supplier: "Vineyard Select", lastOrdered: "2024-01-11" },
-  { id: "7", name: "Arborio Rice", category: "Dry Goods", current: 30, minimum: 15, maximum: 40, unit: "lbs", costPerUnit: 3.99, supplier: "Italian Imports", lastOrdered: "2024-01-09" },
-  { id: "8", name: "Parmesan Cheese", category: "Dairy", current: 15, minimum: 10, maximum: 30, unit: "lbs", costPerUnit: 22.99, supplier: "Italian Imports", lastOrdered: "2024-01-12" },
-  { id: "9", name: "Cocktail Napkins", category: "Supplies", current: 500, minimum: 200, maximum: 1000, unit: "pcs", costPerUnit: 0.05, supplier: "Restaurant Supply Co", lastOrdered: "2024-01-05" },
-  { id: "10", name: "Tomatoes", category: "Produce", current: 40, minimum: 30, maximum: 80, unit: "lbs", costPerUnit: 2.99, supplier: "Green Valley", lastOrdered: "2024-01-14" },
-];
 
 export function InventoryView() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+
+  const { data: inventoryItems = [], isLoading } = useInventoryItems();
+  const createItem = useCreateInventoryItem();
+  const updateItem = useUpdateInventoryItem();
+  const deleteItem = useDeleteInventoryItem();
 
   const filteredItems = inventoryItems.filter((item) => {
     const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
@@ -41,14 +30,52 @@ export function InventoryView() {
     return matchesCategory && matchesSearch;
   });
 
-  const lowStockItems = inventoryItems.filter(i => i.current < i.minimum);
-  const totalValue = inventoryItems.reduce((acc, i) => acc + (i.current * i.costPerUnit), 0);
+  const lowStockItems = inventoryItems.filter(i => i.current_stock < i.minimum_stock);
+  const totalValue = inventoryItems.reduce((acc, i) => acc + (i.current_stock * (i.cost_per_unit || 0)), 0);
 
-  const getStockStatus = (current: number, minimum: number, maximum: number) => {
+  const getStockStatus = (current: number, minimum: number) => {
     const percentage = (current / minimum) * 100;
     if (percentage < 50) return "critical";
     if (percentage < 100) return "low";
     return "good";
+  };
+
+  const handleSubmit = (data: Partial<InventoryItem>) => {
+    if (selectedItem) {
+      updateItem.mutate({ id: selectedItem.id, ...data }, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          setSelectedItem(null);
+        }
+      });
+    } else {
+      createItem.mutate(data as any, {
+        onSuccess: () => {
+          setDialogOpen(false);
+        }
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    if (selectedItem) {
+      deleteItem.mutate(selectedItem.id, {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setSelectedItem(null);
+        }
+      });
+    }
+  };
+
+  const openEditDialog = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setDialogOpen(true);
+  };
+
+  const openDeleteDialog = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setDeleteDialogOpen(true);
   };
 
   return (
@@ -64,7 +91,7 @@ export function InventoryView() {
             <ShoppingCart className="h-4 w-4" />
             Create Order
           </Button>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => { setSelectedItem(null); setDialogOpen(true); }}>
             <Plus className="h-4 w-4" />
             Add Item
           </Button>
@@ -140,78 +167,122 @@ export function InventoryView() {
       </div>
 
       {/* Inventory Table */}
-      <div className="rounded-2xl bg-card shadow-card overflow-hidden animate-fade-in opacity-0" style={{ animationDelay: "300ms" }}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Item</th>
-                <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Category</th>
-                <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Stock Level</th>
-                <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Unit Cost</th>
-                <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Supplier</th>
-                <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map((item, index) => {
-                const status = getStockStatus(item.current, item.minimum, item.maximum);
-                return (
-                  <tr
-                    key={item.id}
-                    className="border-b border-border/50 hover:bg-secondary/50 transition-colors animate-fade-in opacity-0"
-                    style={{ animationDelay: `${350 + index * 30}ms` }}
-                  >
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
-                          <Package className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <span className="font-medium text-foreground">{item.name}</span>
-                      </div>
-                    </td>
-                    <td className="p-4 text-sm text-muted-foreground">{item.category}</td>
-                    <td className="p-4">
-                      <div className="space-y-1">
-                        <span className="text-sm font-medium text-foreground">
-                          {item.current} / {item.minimum} {item.unit}
-                        </span>
-                        <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={cn(
-                              "h-full rounded-full transition-all",
-                              status === "critical" && "bg-destructive",
-                              status === "low" && "bg-warning",
-                              status === "good" && "bg-success"
-                            )}
-                            style={{ width: `${Math.min((item.current / item.minimum) * 100, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4 text-sm text-foreground">${item.costPerUnit.toFixed(2)}</td>
-                    <td className="p-4 text-sm text-muted-foreground">{item.supplier}</td>
-                    <td className="p-4">
-                      <span
-                        className={cn(
-                          "px-3 py-1 rounded-full text-xs font-medium",
-                          status === "critical" && "bg-destructive/20 text-destructive",
-                          status === "low" && "bg-warning/20 text-warning",
-                          status === "good" && "bg-success/20 text-success"
-                        )}
-                      >
-                        {status === "critical" && "Critical"}
-                        {status === "low" && "Low Stock"}
-                        {status === "good" && "In Stock"}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {isLoading ? (
+        <Skeleton className="h-96 rounded-2xl" />
+      ) : filteredItems.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          {searchQuery || selectedCategory !== "All" 
+            ? "No items match your filters." 
+            : "No inventory items yet. Add your first item!"}
         </div>
-      </div>
+      ) : (
+        <div className="rounded-2xl bg-card shadow-card overflow-hidden animate-fade-in opacity-0" style={{ animationDelay: "300ms" }}>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Item</th>
+                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Category</th>
+                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Stock Level</th>
+                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Unit Cost</th>
+                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Supplier</th>
+                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Status</th>
+                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredItems.map((item, index) => {
+                  const status = getStockStatus(item.current_stock, item.minimum_stock);
+                  return (
+                    <tr
+                      key={item.id}
+                      className="border-b border-border/50 hover:bg-secondary/50 transition-colors animate-fade-in opacity-0"
+                      style={{ animationDelay: `${350 + index * 30}ms` }}
+                    >
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
+                            <Package className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <span className="font-medium text-foreground">{item.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm text-muted-foreground">{item.category}</td>
+                      <td className="p-4">
+                        <div className="space-y-1">
+                          <span className="text-sm font-medium text-foreground">
+                            {item.current_stock} / {item.minimum_stock} {item.unit}
+                          </span>
+                          <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all",
+                                status === "critical" && "bg-destructive",
+                                status === "low" && "bg-warning",
+                                status === "good" && "bg-success"
+                              )}
+                              style={{ width: `${Math.min((item.current_stock / item.minimum_stock) * 100, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm text-foreground">${(item.cost_per_unit || 0).toFixed(2)}</td>
+                      <td className="p-4 text-sm text-muted-foreground">{item.supplier || "-"}</td>
+                      <td className="p-4">
+                        <span
+                          className={cn(
+                            "px-3 py-1 rounded-full text-xs font-medium",
+                            status === "critical" && "bg-destructive/20 text-destructive",
+                            status === "low" && "bg-warning/20 text-warning",
+                            status === "good" && "bg-success/20 text-success"
+                          )}
+                        >
+                          {status === "critical" && "Critical"}
+                          {status === "low" && "Low Stock"}
+                          {status === "good" && "In Stock"}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => openEditDialog(item)}
+                            className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                          >
+                            <Edit className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                          <button 
+                            onClick={() => openDeleteDialog(item)}
+                            className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <InventoryItemDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        item={selectedItem}
+        onSubmit={handleSubmit}
+        isLoading={createItem.isPending || updateItem.isPending}
+      />
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDelete}
+        title="Delete Inventory Item"
+        description={`Are you sure you want to delete "${selectedItem?.name}"? This action cannot be undone.`}
+        isLoading={deleteItem.isPending}
+      />
     </div>
   );
 }
