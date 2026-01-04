@@ -1,32 +1,17 @@
 import { useState } from "react";
-import { Plus, Search, Calendar, Clock, Users, Phone, Check, X } from "lucide-react";
+import { Plus, Search, Calendar, Clock, Users, Phone, Check, X, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useReservations, useCreateReservation, useUpdateReservation, useDeleteReservation } from "@/hooks/useReservations";
+import { ReservationDialog } from "@/components/dialogs/ReservationDialog";
+import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog";
+import { Tables } from "@/integrations/supabase/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
 
-interface Reservation {
-  id: string;
-  name: string;
-  phone: string;
-  date: string;
-  time: string;
-  guests: number;
-  table: string;
-  status: "confirmed" | "pending" | "seated" | "completed" | "cancelled";
-  notes?: string;
-}
+type Reservation = Tables<"reservations">;
 
-const reservations: Reservation[] = [
-  { id: "1", name: "Thompson Party", phone: "(555) 111-2222", date: "2024-01-15", time: "6:00 PM", guests: 4, table: "T-12", status: "confirmed", notes: "Anniversary dinner" },
-  { id: "2", name: "Lee Birthday", phone: "(555) 222-3333", date: "2024-01-15", time: "6:30 PM", guests: 8, table: "T-5", status: "confirmed", notes: "Birthday cake requested" },
-  { id: "3", name: "Anderson", phone: "(555) 333-4444", date: "2024-01-15", time: "7:00 PM", guests: 2, table: "T-3", status: "pending" },
-  { id: "4", name: "Corporate Dinner", phone: "(555) 444-5555", date: "2024-01-15", time: "7:30 PM", guests: 12, table: "Private Room", status: "confirmed", notes: "Business meeting" },
-  { id: "5", name: "Rodriguez Family", phone: "(555) 555-6666", date: "2024-01-15", time: "8:00 PM", guests: 6, table: "T-8", status: "pending" },
-  { id: "6", name: "Smith Wedding", phone: "(555) 666-7777", date: "2024-01-16", time: "7:00 PM", guests: 20, table: "Event Space", status: "confirmed", notes: "Engagement party" },
-  { id: "7", name: "Johnson", phone: "(555) 777-8888", date: "2024-01-16", time: "6:00 PM", guests: 3, table: "T-9", status: "confirmed" },
-  { id: "8", name: "Williams", phone: "(555) 888-9999", date: "2024-01-16", time: "8:30 PM", guests: 4, table: "T-7", status: "pending" },
-];
-
-const statusConfig = {
+const statusConfig: Record<string, { label: string; color: string }> = {
   confirmed: { label: "Confirmed", color: "bg-success/20 text-success" },
   pending: { label: "Pending", color: "bg-warning/20 text-warning" },
   seated: { label: "Seated", color: "bg-primary/20 text-primary" },
@@ -35,20 +20,77 @@ const statusConfig = {
 };
 
 export function ReservationsView() {
-  const [selectedDate, setSelectedDate] = useState("2024-01-15");
+  const today = new Date().toISOString().split("T")[0];
+  const [selectedDate, setSelectedDate] = useState(today);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
 
-  const filteredReservations = reservations.filter((res) => {
-    const matchesDate = res.date === selectedDate;
-    const matchesSearch = res.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesDate && matchesSearch;
-  });
+  const { data: reservations = [], isLoading } = useReservations(selectedDate);
+  const createReservation = useCreateReservation();
+  const updateReservation = useUpdateReservation();
+  const deleteReservation = useDeleteReservation();
+
+  const filteredReservations = reservations.filter((res) => 
+    res.customer_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const todayStats = {
     total: filteredReservations.length,
     confirmed: filteredReservations.filter(r => r.status === "confirmed").length,
     pending: filteredReservations.filter(r => r.status === "pending").length,
     guests: filteredReservations.reduce((acc, r) => acc + r.guests, 0),
+  };
+
+  const handleSubmit = (data: Partial<Reservation>) => {
+    if (selectedReservation) {
+      updateReservation.mutate({ id: selectedReservation.id, ...data }, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          setSelectedReservation(null);
+        }
+      });
+    } else {
+      createReservation.mutate(data as any, {
+        onSuccess: () => {
+          setDialogOpen(false);
+        }
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    if (selectedReservation) {
+      deleteReservation.mutate(selectedReservation.id, {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setSelectedReservation(null);
+        }
+      });
+    }
+  };
+
+  const handleStatusChange = (reservation: Reservation, newStatus: string) => {
+    updateReservation.mutate({ id: reservation.id, status: newStatus });
+  };
+
+  const openEditDialog = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setDialogOpen(true);
+  };
+
+  const openDeleteDialog = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setDeleteDialogOpen(true);
+  };
+
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(":");
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour}:${minutes} ${ampm}`;
   };
 
   return (
@@ -59,7 +101,7 @@ export function ReservationsView() {
           <h1 className="font-display text-3xl font-bold text-foreground">Reservations</h1>
           <p className="text-muted-foreground mt-1">Manage bookings and table assignments</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => { setSelectedReservation(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4" />
           New Reservation
         </Button>
@@ -109,67 +151,120 @@ export function ReservationsView() {
       </div>
 
       {/* Reservations List */}
-      <div className="space-y-4">
-        {filteredReservations.map((res, index) => (
-          <div
-            key={res.id}
-            className="rounded-2xl bg-card p-5 shadow-card hover:shadow-elevated transition-all duration-300 animate-fade-in opacity-0"
-            style={{ animationDelay: `${200 + index * 50}ms` }}
-          >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center shadow-glow shrink-0">
-                  <Users className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{res.name}</h3>
-                  <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {res.time}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      {res.guests} guests
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-4 w-4" />
-                      {res.phone}
-                    </span>
+      {isLoading ? (
+        <div className="space-y-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-2xl" />
+          ))}
+        </div>
+      ) : filteredReservations.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          {searchQuery 
+            ? "No reservations match your search." 
+            : "No reservations for this date. Create a new one!"}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredReservations.map((res, index) => (
+            <div
+              key={res.id}
+              className="rounded-2xl bg-card p-5 shadow-card hover:shadow-elevated transition-all duration-300 animate-fade-in opacity-0"
+              style={{ animationDelay: `${200 + index * 50}ms` }}
+            >
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center shadow-glow shrink-0">
+                    <Users className="h-6 w-6 text-primary-foreground" />
                   </div>
-                  {res.notes && (
-                    <p className="text-sm text-muted-foreground mt-2 italic">"{res.notes}"</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <span className="text-sm font-medium text-foreground">{res.table}</span>
-                  <span
-                    className={cn(
-                      "block mt-1 px-3 py-1 rounded-full text-xs font-medium",
-                      statusConfig[res.status].color
+                  <div>
+                    <h3 className="font-semibold text-foreground">{res.customer_name}</h3>
+                    <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {formatTime(res.reservation_time)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        {res.guests} guests
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-4 w-4" />
+                        {res.customer_phone}
+                      </span>
+                    </div>
+                    {res.notes && (
+                      <p className="text-sm text-muted-foreground mt-2 italic">"{res.notes}"</p>
                     )}
-                  >
-                    {statusConfig[res.status].label}
-                  </span>
+                  </div>
                 </div>
-                {res.status === "pending" && (
+
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    {res.table_number && (
+                      <span className="text-sm font-medium text-foreground">{res.table_number}</span>
+                    )}
+                    <span
+                      className={cn(
+                        "block mt-1 px-3 py-1 rounded-full text-xs font-medium",
+                        statusConfig[res.status]?.color || statusConfig.pending.color
+                      )}
+                    >
+                      {statusConfig[res.status]?.label || res.status}
+                    </span>
+                  </div>
+                  {res.status === "pending" && (
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleStatusChange(res, "confirmed")}
+                        className="p-2 rounded-lg bg-success/20 hover:bg-success/30 transition-colors"
+                      >
+                        <Check className="h-4 w-4 text-success" />
+                      </button>
+                      <button 
+                        onClick={() => handleStatusChange(res, "cancelled")}
+                        className="p-2 rounded-lg bg-destructive/20 hover:bg-destructive/30 transition-colors"
+                      >
+                        <X className="h-4 w-4 text-destructive" />
+                      </button>
+                    </div>
+                  )}
                   <div className="flex gap-2">
-                    <button className="p-2 rounded-lg bg-success/20 hover:bg-success/30 transition-colors">
-                      <Check className="h-4 w-4 text-success" />
+                    <button 
+                      onClick={() => openEditDialog(res)}
+                      className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                    >
+                      <Edit className="h-4 w-4 text-muted-foreground" />
                     </button>
-                    <button className="p-2 rounded-lg bg-destructive/20 hover:bg-destructive/30 transition-colors">
-                      <X className="h-4 w-4 text-destructive" />
+                    <button 
+                      onClick={() => openDeleteDialog(res)}
+                      className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </button>
                   </div>
-                )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      <ReservationDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        reservation={selectedReservation}
+        onSubmit={handleSubmit}
+        isLoading={createReservation.isPending || updateReservation.isPending}
+      />
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDelete}
+        title="Delete Reservation"
+        description={`Are you sure you want to delete the reservation for ${selectedReservation?.customer_name}? This action cannot be undone.`}
+        isLoading={deleteReservation.isPending}
+      />
     </div>
   );
 }

@@ -6,8 +6,24 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { InventoryAlerts } from "@/components/dashboard/InventoryAlerts";
 import { OrdersChart } from "@/components/dashboard/OrdersChart";
 import { TableStatus } from "@/components/dashboard/TableStatus";
+import { useStaffMembers } from "@/hooks/useStaffMembers";
+import { useReservations } from "@/hooks/useReservations";
+import { useMenuItems } from "@/hooks/useMenuItems";
 
 export function DashboardView() {
+  const today = new Date().toISOString().split("T")[0];
+  const { data: staffMembers = [] } = useStaffMembers();
+  const { data: reservations = [] } = useReservations(today);
+  const { data: menuItems = [] } = useMenuItems();
+
+  const activeStaff = staffMembers.filter(s => s.status === "active").length;
+  const onBreak = staffMembers.filter(s => s.status === "off").length;
+  const todayReservations = reservations.filter(r => r.status !== "cancelled").length;
+  const expectedGuests = reservations.reduce((acc, r) => acc + r.guests, 0);
+  const avgMenuPrice = menuItems.length > 0 
+    ? menuItems.reduce((acc, m) => acc + m.price, 0) / menuItems.length 
+    : 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -19,34 +35,34 @@ export function DashboardView() {
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          title="Today's Revenue"
-          value="$4,832"
-          change="+12.5% from yesterday"
-          changeType="positive"
+          title="Today's Reservations"
+          value={todayReservations.toString()}
+          change={`${expectedGuests} expected guests`}
+          changeType="neutral"
           icon={DollarSign}
           delay={100}
         />
         <MetricCard
-          title="Orders"
-          value="156"
-          change="+8 in last hour"
-          changeType="positive"
+          title="Menu Items"
+          value={menuItems.length.toString()}
+          change={`Avg $${avgMenuPrice.toFixed(0)} per item`}
+          changeType="neutral"
           icon={ShoppingBag}
           delay={150}
         />
         <MetricCard
           title="Active Staff"
-          value="12"
-          change="2 on break"
+          value={activeStaff.toString()}
+          change={onBreak > 0 ? `${onBreak} off today` : "All working"}
           changeType="neutral"
           icon={Users}
           delay={200}
         />
         <MetricCard
-          title="Avg Order Value"
-          value="$31.00"
-          change="+$2.50 vs avg"
-          changeType="positive"
+          title="Total Staff"
+          value={staffMembers.length.toString()}
+          change="Team members"
+          changeType="neutral"
           icon={TrendingUp}
           delay={250}
         />
