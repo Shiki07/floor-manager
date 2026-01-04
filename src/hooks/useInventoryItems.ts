@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { inventoryItemSchema } from "@/lib/schemas";
+import { getSafeErrorMessage } from "@/lib/errorHandler";
 
 type InventoryItem = Tables<"inventory_items">;
 type InventoryItemInsert = TablesInsert<"inventory_items">;
@@ -27,6 +29,13 @@ export function useCreateInventoryItem() {
   
   return useMutation({
     mutationFn: async (item: InventoryItemInsert) => {
+      // Validate input before sending to database
+      const validation = inventoryItemSchema.safeParse(item);
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        throw new Error(firstError?.message || 'Invalid data provided');
+      }
+      
       const { data, error } = await supabase
         .from("inventory_items")
         .insert(item)
@@ -41,7 +50,7 @@ export function useCreateInventoryItem() {
       toast.success("Inventory item added successfully");
     },
     onError: (error) => {
-      toast.error("Failed to add inventory item: " + error.message);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }
@@ -51,6 +60,13 @@ export function useUpdateInventoryItem() {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: InventoryItemUpdate & { id: string }) => {
+      // Validate input before sending to database
+      const validation = inventoryItemSchema.partial().safeParse(updates);
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        throw new Error(firstError?.message || 'Invalid data provided');
+      }
+      
       const { data, error } = await supabase
         .from("inventory_items")
         .update(updates)
@@ -66,7 +82,7 @@ export function useUpdateInventoryItem() {
       toast.success("Inventory item updated successfully");
     },
     onError: (error) => {
-      toast.error("Failed to update inventory item: " + error.message);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }
@@ -88,7 +104,7 @@ export function useDeleteInventoryItem() {
       toast.success("Inventory item deleted successfully");
     },
     onError: (error) => {
-      toast.error("Failed to delete inventory item: " + error.message);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }

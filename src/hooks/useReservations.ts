@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { reservationSchema } from "@/lib/schemas";
+import { getSafeErrorMessage } from "@/lib/errorHandler";
 
 type Reservation = Tables<"reservations">;
 type ReservationInsert = TablesInsert<"reservations">;
@@ -34,6 +36,13 @@ export function useCreateReservation() {
   
   return useMutation({
     mutationFn: async (reservation: ReservationInsert) => {
+      // Validate input before sending to database
+      const validation = reservationSchema.safeParse(reservation);
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        throw new Error(firstError?.message || 'Invalid data provided');
+      }
+      
       const { data, error } = await supabase
         .from("reservations")
         .insert(reservation)
@@ -48,7 +57,7 @@ export function useCreateReservation() {
       toast.success("Reservation created successfully");
     },
     onError: (error) => {
-      toast.error("Failed to create reservation: " + error.message);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }
@@ -58,6 +67,13 @@ export function useUpdateReservation() {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: ReservationUpdate & { id: string }) => {
+      // Validate input before sending to database
+      const validation = reservationSchema.partial().safeParse(updates);
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        throw new Error(firstError?.message || 'Invalid data provided');
+      }
+      
       const { data, error } = await supabase
         .from("reservations")
         .update(updates)
@@ -73,7 +89,7 @@ export function useUpdateReservation() {
       toast.success("Reservation updated successfully");
     },
     onError: (error) => {
-      toast.error("Failed to update reservation: " + error.message);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }
@@ -95,7 +111,7 @@ export function useDeleteReservation() {
       toast.success("Reservation deleted successfully");
     },
     onError: (error) => {
-      toast.error("Failed to delete reservation: " + error.message);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }

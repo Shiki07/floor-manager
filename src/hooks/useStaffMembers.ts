@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { staffMemberSchema } from "@/lib/schemas";
+import { getSafeErrorMessage } from "@/lib/errorHandler";
 
 type StaffMember = Tables<"staff_members">;
 type StaffMemberInsert = TablesInsert<"staff_members">;
@@ -27,6 +29,13 @@ export function useCreateStaffMember() {
   
   return useMutation({
     mutationFn: async (staffMember: StaffMemberInsert) => {
+      // Validate input before sending to database
+      const validation = staffMemberSchema.safeParse(staffMember);
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        throw new Error(firstError?.message || 'Invalid data provided');
+      }
+      
       const { data, error } = await supabase
         .from("staff_members")
         .insert(staffMember)
@@ -41,7 +50,7 @@ export function useCreateStaffMember() {
       toast.success("Staff member added successfully");
     },
     onError: (error) => {
-      toast.error("Failed to add staff member: " + error.message);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }
@@ -51,6 +60,13 @@ export function useUpdateStaffMember() {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: StaffMemberUpdate & { id: string }) => {
+      // Validate input before sending to database
+      const validation = staffMemberSchema.partial().safeParse(updates);
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        throw new Error(firstError?.message || 'Invalid data provided');
+      }
+      
       const { data, error } = await supabase
         .from("staff_members")
         .update(updates)
@@ -66,7 +82,7 @@ export function useUpdateStaffMember() {
       toast.success("Staff member updated successfully");
     },
     onError: (error) => {
-      toast.error("Failed to update staff member: " + error.message);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }
@@ -88,7 +104,7 @@ export function useDeleteStaffMember() {
       toast.success("Staff member deleted successfully");
     },
     onError: (error) => {
-      toast.error("Failed to delete staff member: " + error.message);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }
