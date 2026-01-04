@@ -65,13 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching user role:', error);
+        // Silently handle role fetch errors - don't expose details to console
         setUserRole(null);
       } else {
         setUserRole(data?.role as AppRole ?? null);
       }
-    } catch (error) {
-      console.error('Error fetching user role:', error);
+    } catch {
+      // Silently handle role fetch errors - don't expose details to console
       setUserRole(null);
     } finally {
       setIsLoading(false);
