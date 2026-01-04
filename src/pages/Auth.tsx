@@ -111,7 +111,7 @@ export default function Auth() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl gradient-primary shadow-glow">
             <ChefHat className="h-7 w-7 text-primary-foreground" />
           </div>
-          <CardTitle className="font-display text-2xl">RestaurantOS</CardTitle>
+          <CardTitle className="font-display text-2xl">Floor Manager</CardTitle>
           <CardDescription>Sign in to manage your restaurant</CardDescription>
         </CardHeader>
         <CardContent>

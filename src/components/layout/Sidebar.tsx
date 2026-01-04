@@ -59,7 +59,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             </div>
             {!collapsed && (
               <span className="font-display text-lg font-bold text-foreground">
-                RestaurantOS
+                Floor Manager
               </span>
             )}
           </div>
