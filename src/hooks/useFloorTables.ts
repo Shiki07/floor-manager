@@ -17,6 +17,20 @@ export interface FloorTable {
 export function useFloorTables() {
   const queryClient = useQueryClient();
 
+  // useQuery must come BEFORE useEffect to maintain consistent hook order
+  const query = useQuery({
+    queryKey: ["floor-tables"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("floor_tables")
+        .select("*")
+        .order("table_number", { ascending: true });
+
+      if (error) throw error;
+      return data as FloorTable[];
+    },
+  });
+
   useEffect(() => {
     const channel = supabase
       .channel("floor-tables-realtime")
@@ -56,18 +70,7 @@ export function useFloorTables() {
     };
   }, [queryClient]);
 
-  return useQuery({
-    queryKey: ["floor-tables"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("floor_tables")
-        .select("*")
-        .order("table_number", { ascending: true });
-
-      if (error) throw error;
-      return data as FloorTable[];
-    },
-  });
+  return query;
 }
 
 export function useUpdateTableStatus() {
@@ -133,6 +136,8 @@ export function useCreateFloorTable() {
     onError: (error: Error) => {
       if (error.message.includes("duplicate")) {
         toast.error("A table with this number already exists");
+      } else if (error.message.includes("row-level security") || error.message.includes("42501")) {
+        toast.error("Only managers can add tables");
       } else {
         toast.error("Failed to add table");
       }
@@ -185,8 +190,12 @@ export function useDeleteFloorTable() {
       queryClient.invalidateQueries({ queryKey: ["floor-tables"] });
       toast.success("Table removed successfully");
     },
-    onError: () => {
-      toast.error("Failed to remove table");
+    onError: (error: Error) => {
+      if (error.message.includes("row-level security") || error.message.includes("42501")) {
+        toast.error("Only managers can remove tables");
+      } else {
+        toast.error("Failed to remove table");
+      }
     },
   });
 }
