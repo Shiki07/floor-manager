@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,6 +15,47 @@ export interface FloorTable {
 }
 
 export function useFloorTables() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("floor-tables-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "floor_tables",
+        },
+        (payload) => {
+          const currentTables = queryClient.getQueryData<FloorTable[]>(["floor-tables"]) || [];
+
+          if (payload.eventType === "INSERT") {
+            const newTable = payload.new as FloorTable;
+            const updated = [...currentTables, newTable].sort(
+              (a, b) => a.table_number - b.table_number
+            );
+            queryClient.setQueryData(["floor-tables"], updated);
+          } else if (payload.eventType === "UPDATE") {
+            const updatedTable = payload.new as FloorTable;
+            const updated = currentTables.map((t) =>
+              t.id === updatedTable.id ? updatedTable : t
+            );
+            queryClient.setQueryData(["floor-tables"], updated);
+          } else if (payload.eventType === "DELETE") {
+            const deletedId = payload.old.id;
+            const updated = currentTables.filter((t) => t.id !== deletedId);
+            queryClient.setQueryData(["floor-tables"], updated);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ["floor-tables"],
     queryFn: async () => {
