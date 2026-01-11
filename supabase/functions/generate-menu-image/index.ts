@@ -6,31 +6,145 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Generic error messages for client responses
+const ERROR_MESSAGES = {
+  UNAUTHORIZED: "Authentication required",
+  INVALID_REQUEST: "Invalid request data",
+  NOT_FOUND: "Menu item not found",
+  GENERATION_FAILED: "Failed to generate image. Please try again.",
+  RATE_LIMITED: "Service temporarily unavailable. Please try again later.",
+  SERVICE_UNAVAILABLE: "Service temporarily unavailable. Please contact support.",
+};
+
+// Input validation helpers
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const VALID_CATEGORIES = ["Starters", "Main Courses", "Desserts", "Beverages", "Specials"];
+
+const sanitizeInput = (input: string): string => {
+  return input
+    .replace(/[<>{}[\]]/g, '') // Remove potential injection characters
+    .replace(/\n{3,}/g, '\n\n') // Limit consecutive newlines
+    .trim();
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { menuItemId, name, description, category } = await req.json();
-
-    if (!menuItemId || !name) {
+    // Authentication check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({ error: "menuItemId and name are required" }),
+        JSON.stringify({ error: ERROR_MESSAGES.UNAUTHORIZED }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Create client with user's JWT for authentication verification
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify JWT and get user claims
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claims, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    
+    if (claimsError || !claims?.claims?.sub) {
+      console.error("[AUTH_ERROR]", { error: claimsError?.message, timestamp: new Date().toISOString() });
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.UNAUTHORIZED }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Parse and validate request body
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.INVALID_REQUEST }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { menuItemId, name, description, category } = body;
+
+    // Validate menuItemId format
+    if (!menuItemId || !UUID_REGEX.test(menuItemId)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid menu item ID format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate name
+    if (!name || typeof name !== 'string' || name.length < 1 || name.length > 200) {
+      return new Response(
+        JSON.stringify({ error: "Name must be between 1-200 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate description length
+    if (description && (typeof description !== 'string' || description.length > 500)) {
+      return new Response(
+        JSON.stringify({ error: "Description must be less than 500 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate category if provided
+    if (category && !VALID_CATEGORIES.includes(category)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid category" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Use service role client for database operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify menu item exists
+    const { data: menuItem, error: fetchError } = await supabase
+      .from("menu_items")
+      .select("id")
+      .eq("id", menuItemId)
+      .single();
+
+    if (fetchError || !menuItem) {
+      console.error("[MENU_ITEM_NOT_FOUND]", { menuItemId, timestamp: new Date().toISOString() });
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.NOT_FOUND }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+      console.error("[CONFIG_ERROR]", { message: "LOVABLE_API_KEY not configured", timestamp: new Date().toISOString() });
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.SERVICE_UNAVAILABLE }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
+    // Sanitize inputs before using in prompt
+    const sanitizedName = sanitizeInput(name);
+    const sanitizedDescription = description ? sanitizeInput(description) : "";
+    const sanitizedCategory = category ? sanitizeInput(category) : "dish";
+
     // Create a detailed prompt for food photography
-    const prompt = `Generate a professional food photography image of "${name}". ${description ? `Description: ${description}.` : ""} Category: ${category || "dish"}. 
+    const prompt = `Generate a professional food photography image of "${sanitizedName}". ${sanitizedDescription ? `Description: ${sanitizedDescription}.` : ""} Category: ${sanitizedCategory}. 
 Style: High-end restaurant menu photography, beautifully plated on elegant dinnerware, soft natural lighting, shallow depth of field, appetizing and mouth-watering presentation. Top-down or 45-degree angle shot. Clean, neutral background.`;
 
-    console.log("Generating image for:", name);
+    console.log("[GENERATING_IMAGE]", { menuItemId, name: sanitizedName, timestamp: new Date().toISOString() });
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -47,33 +161,37 @@ Style: High-end restaurant menu photography, beautifully plated on elegant dinne
 
     if (!response.ok) {
       if (response.status === 429) {
+        console.error("[RATE_LIMITED]", { menuItemId, timestamp: new Date().toISOString() });
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+          JSON.stringify({ error: ERROR_MESSAGES.RATE_LIMITED }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
+        console.error("[CREDITS_EXHAUSTED]", { menuItemId, timestamp: new Date().toISOString() });
         return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
+          JSON.stringify({ error: ERROR_MESSAGES.SERVICE_UNAVAILABLE }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      console.error("[AI_GATEWAY_ERROR]", { status: response.status, error: errorText, menuItemId, timestamp: new Date().toISOString() });
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.GENERATION_FAILED }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const data = await response.json();
     const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
     if (!imageData) {
-      throw new Error("No image generated");
+      console.error("[NO_IMAGE_GENERATED]", { menuItemId, timestamp: new Date().toISOString() });
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.GENERATION_FAILED }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-
-    // Upload the base64 image to Supabase Storage
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Convert base64 to blob
     const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
@@ -89,8 +207,11 @@ Style: High-end restaurant menu photography, beautifully plated on elegant dinne
       });
 
     if (uploadError) {
-      console.error("Upload error:", uploadError);
-      throw new Error(`Failed to upload image: ${uploadError.message}`);
+      console.error("[UPLOAD_ERROR]", { menuItemId, error: uploadError.message, timestamp: new Date().toISOString() });
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.GENERATION_FAILED }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const { data: { publicUrl } } = supabase.storage
@@ -104,20 +225,27 @@ Style: High-end restaurant menu photography, beautifully plated on elegant dinne
       .eq("id", menuItemId);
 
     if (updateError) {
-      console.error("Update error:", updateError);
-      throw new Error(`Failed to update menu item: ${updateError.message}`);
+      console.error("[UPDATE_ERROR]", { menuItemId, error: updateError.message, timestamp: new Date().toISOString() });
+      return new Response(
+        JSON.stringify({ error: ERROR_MESSAGES.GENERATION_FAILED }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    console.log("Successfully generated and saved image for:", name);
+    console.log("[IMAGE_GENERATED]", { menuItemId, name: sanitizedName, timestamp: new Date().toISOString() });
 
     return new Response(
       JSON.stringify({ success: true, image_url: publicUrl }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error:", error);
+    console.error("[FUNCTION_ERROR]", { 
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString() 
+    });
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "An error occurred. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
