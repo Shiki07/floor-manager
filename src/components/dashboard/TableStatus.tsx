@@ -1,29 +1,6 @@
-import { useState } from "react";
 import { cn } from "@/lib/utils";
-
-type TableStatus = "available" | "occupied" | "reserved" | "cleaning";
-
-interface Table {
-  id: string;
-  number: number;
-  seats: number;
-  status: TableStatus;
-}
-
-const initialTables: Table[] = [
-  { id: "1", number: 1, seats: 2, status: "available" },
-  { id: "2", number: 2, seats: 2, status: "occupied" },
-  { id: "3", number: 3, seats: 4, status: "occupied" },
-  { id: "4", number: 4, seats: 4, status: "available" },
-  { id: "5", number: 5, seats: 6, status: "reserved" },
-  { id: "6", number: 6, seats: 4, status: "occupied" },
-  { id: "7", number: 7, seats: 2, status: "cleaning" },
-  { id: "8", number: 8, seats: 8, status: "occupied" },
-  { id: "9", number: 9, seats: 4, status: "available" },
-  { id: "10", number: 10, seats: 2, status: "occupied" },
-  { id: "11", number: 11, seats: 6, status: "reserved" },
-  { id: "12", number: 12, seats: 4, status: "available" },
-];
+import { useFloorTables, useUpdateTableStatus, TableStatus as TStatus } from "@/hooks/useFloorTables";
+import { Loader2 } from "lucide-react";
 
 const statusColors = {
   available: "bg-success/20 border-success text-success",
@@ -32,20 +9,16 @@ const statusColors = {
   cleaning: "bg-muted border-muted-foreground text-muted-foreground",
 };
 
-const statusOrder: TableStatus[] = ["available", "occupied", "reserved", "cleaning"];
+const statusOrder: TStatus[] = ["available", "occupied", "reserved", "cleaning"];
 
 export function TableStatus() {
-  const [tables, setTables] = useState<Table[]>(initialTables);
+  const { data: tables = [], isLoading } = useFloorTables();
+  const updateStatus = useUpdateTableStatus();
 
-  const cycleStatus = (tableId: string) => {
-    setTables((prev) =>
-      prev.map((table) => {
-        if (table.id !== tableId) return table;
-        const currentIndex = statusOrder.indexOf(table.status);
-        const nextIndex = (currentIndex + 1) % statusOrder.length;
-        return { ...table, status: statusOrder[nextIndex] };
-      })
-    );
+  const cycleStatus = (tableId: string, currentStatus: TStatus) => {
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    const nextIndex = (currentIndex + 1) % statusOrder.length;
+    updateStatus.mutate({ id: tableId, status: statusOrder[nextIndex] });
   };
 
   const counts = {
@@ -53,6 +26,14 @@ export function TableStatus() {
     occupied: tables.filter((t) => t.status === "occupied").length,
     reserved: tables.filter((t) => t.status === "reserved").length,
   };
+
+  if (isLoading) {
+    return (
+      <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in flex items-center justify-center min-h-[300px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in" style={{ animationDelay: "450ms" }}>
@@ -69,14 +50,15 @@ export function TableStatus() {
         {tables.map((table, index) => (
           <button
             key={table.id}
-            onClick={() => cycleStatus(table.id)}
+            onClick={() => cycleStatus(table.id, table.status)}
+            disabled={updateStatus.isPending}
             className={cn(
-              "relative p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer animate-fade-in",
+              "relative p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer animate-fade-in disabled:opacity-50",
               statusColors[table.status]
             )}
             style={{ animationDelay: `${550 + index * 50}ms` }}
           >
-            <span className="font-display font-bold text-lg">T{table.number}</span>
+            <span className="font-display font-bold text-lg">T{table.table_number}</span>
             <span className="block text-xs opacity-75">{table.seats} seats</span>
           </button>
         ))}
