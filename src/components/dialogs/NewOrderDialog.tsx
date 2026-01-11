@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { useFloorTables } from "@/hooks/useFloorTables";
-import { Plus, Minus, Trash2, ShoppingCart } from "lucide-react";
+import { Plus, Minus, Trash2, ShoppingCart, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -51,6 +51,7 @@ export function NewOrderDialog({
   const [orderNotes, setOrderNotes] = useState("");
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: menuItems = [] } = useMenuItems();
   const { data: tables = [] } = useFloorTables();
@@ -58,16 +59,22 @@ export function NewOrderDialog({
   const availableItems = menuItems.filter((item) => item.available);
   const categoryOrder = ["Starters", "Main Courses", "Desserts", "Beverages", "Specials"];
   const uniqueCategories = [...new Set(availableItems.map((item) => item.category))];
-  const sortedCategories = uniqueCategories.sort((a, b) => {
+  // Ensure Specials is always in the list
+  const allCategories = [...new Set([...uniqueCategories, "Specials"])];
+  const sortedCategories = allCategories.sort((a, b) => {
     const indexA = categoryOrder.indexOf(a);
     const indexB = categoryOrder.indexOf(b);
     return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
   });
   const categories = ["All", ...sortedCategories];
 
-  const filteredItems = selectedCategory === "All"
-    ? availableItems
-    : availableItems.filter((item) => item.category === selectedCategory);
+  const filteredItems = availableItems.filter((item) => {
+    const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
+    const matchesSearch = searchQuery === "" || 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   const addItem = (menuItem: { id: string; name: string; price: number }) => {
     const existingIndex = orderItems.findIndex(
@@ -136,6 +143,7 @@ export function NewOrderDialog({
     setOrderNotes("");
     setOrderItems([]);
     setSelectedCategory("All");
+    setSearchQuery("");
   };
 
   return (
@@ -157,9 +165,20 @@ export function NewOrderDialog({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-0">
           {/* Left side - Menu items */}
           <div className="flex flex-col min-h-0">
-            <div className="mb-3">
+            <div className="mb-3 space-y-2">
               <Label>Select Items</Label>
-              <div className="flex gap-2 mt-2 overflow-x-auto pb-2">
+              {/* Search bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search menu items..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              {/* Category tabs */}
+              <div className="flex gap-2 overflow-x-auto pb-2">
                 {categories.map((cat) => (
                   <button
                     key={cat}
