@@ -48,10 +48,14 @@ export type Database = {
           created_at: string
           current_stock: number
           id: string
+          last_maintenance_date: string | null
           last_ordered: string | null
+          maintenance_interval_days: number | null
+          maintenance_notes: string | null
           maximum_stock: number | null
           minimum_stock: number
           name: string
+          next_maintenance_date: string | null
           supplier: string | null
           unit: string
           updated_at: string
@@ -62,10 +66,14 @@ export type Database = {
           created_at?: string
           current_stock?: number
           id?: string
+          last_maintenance_date?: string | null
           last_ordered?: string | null
+          maintenance_interval_days?: number | null
+          maintenance_notes?: string | null
           maximum_stock?: number | null
           minimum_stock?: number
           name: string
+          next_maintenance_date?: string | null
           supplier?: string | null
           unit: string
           updated_at?: string
@@ -76,10 +84,14 @@ export type Database = {
           created_at?: string
           current_stock?: number
           id?: string
+          last_maintenance_date?: string | null
           last_ordered?: string | null
+          maintenance_interval_days?: number | null
+          maintenance_notes?: string | null
           maximum_stock?: number | null
           minimum_stock?: number
           name?: string
+          next_maintenance_date?: string | null
           supplier?: string | null
           unit?: string
           updated_at?: string
