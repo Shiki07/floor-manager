@@ -154,7 +154,7 @@ export function NewOrderDialog({
         onOpenChange(val);
       }}
     >
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[95vh] h-[700px] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
             <ShoppingCart className="h-5 w-5 text-primary" />
