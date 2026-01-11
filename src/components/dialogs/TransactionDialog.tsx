@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Transaction } from "@/hooks/useTransactions";
 import { cn } from "@/lib/utils";
-import { Coffee, Sun, Moon, UtensilsCrossed, ChevronDown, ChevronUp } from "lucide-react";
+import { Coffee, Sun, Moon, UtensilsCrossed, ChevronDown, ChevronUp, Percent } from "lucide-react";
 
 interface TransactionDialogProps {
   open: boolean;
@@ -29,6 +29,8 @@ const mealPresets = [
   { id: "custom", label: "Custom", icon: UtensilsCrossed, description: "" },
 ];
 
+const tipPercentages = [15, 18, 20];
+
 export function TransactionDialog({ 
   open, 
   onOpenChange, 
@@ -39,6 +41,9 @@ export function TransactionDialog({
 }: TransactionDialogProps) {
   const [selectedMeal, setSelectedMeal] = useState<string | null>(null);
   const [tableNumber, setTableNumber] = useState("");
+  const [showTipCalculator, setShowTipCalculator] = useState(false);
+  const [tipAmount, setTipAmount] = useState(0);
+  const [selectedTipPercent, setSelectedTipPercent] = useState<number | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [formData, setFormData] = useState({
     type: defaultType as "income" | "expense",
@@ -66,6 +71,9 @@ export function TransactionDialog({
       setSelectedMeal(null);
       setTableNumber("");
       setShowAdvanced(true);
+      setShowTipCalculator(false);
+      setTipAmount(0);
+      setSelectedTipPercent(null);
     } else {
       setFormData({
         type: defaultType,
@@ -80,8 +88,39 @@ export function TransactionDialog({
       setSelectedMeal(defaultType === "income" ? null : null);
       setTableNumber("");
       setShowAdvanced(defaultType === "expense");
+      setShowTipCalculator(false);
+      setTipAmount(0);
+      setSelectedTipPercent(null);
     }
   }, [transaction, open, defaultType]);
+
+  const handleTipSelect = (percent: number) => {
+    setSelectedTipPercent(percent);
+    const baseAmount = formData.amount;
+    const calculatedTip = Math.round(baseAmount * (percent / 100) * 100) / 100;
+    setTipAmount(calculatedTip);
+  };
+
+  const handleCustomTip = (value: string) => {
+    const tip = parseFloat(value) || 0;
+    setTipAmount(tip);
+    setSelectedTipPercent(null);
+  };
+
+  const applyTip = () => {
+    if (tipAmount > 0) {
+      setFormData(prev => ({
+        ...prev,
+        amount: Math.round((prev.amount + tipAmount) * 100) / 100,
+        notes: prev.notes 
+          ? `${prev.notes}\nTip included: $${tipAmount.toFixed(2)}`
+          : `Tip included: $${tipAmount.toFixed(2)}`,
+      }));
+      setTipAmount(0);
+      setSelectedTipPercent(null);
+      setShowTipCalculator(false);
+    }
+  };
 
   const handleMealSelect = (mealId: string) => {
     setSelectedMeal(mealId);
@@ -202,6 +241,94 @@ export function TransactionDialog({
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {/* Tip Calculator Button - Optional */}
+              {selectedMeal && selectedMeal !== "custom" && formData.amount > 0 && (
+                <div className="space-y-3">
+                  {!showTipCalculator ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowTipCalculator(true)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg border border-dashed border-border hover:border-primary/50 hover:bg-secondary/50 w-full justify-center"
+                    >
+                      <Percent className="h-4 w-4" />
+                      Add Tip (optional)
+                    </button>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-secondary/50 border border-border space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">Calculate Tip</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowTipCalculator(false);
+                            setTipAmount(0);
+                            setSelectedTipPercent(null);
+                          }}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      
+                      <div className="text-xs text-muted-foreground">
+                        Base amount: ${formData.amount.toFixed(2)}
+                      </div>
+
+                      <div className="flex gap-2">
+                        {tipPercentages.map((percent) => (
+                          <button
+                            key={percent}
+                            type="button"
+                            onClick={() => handleTipSelect(percent)}
+                            className={cn(
+                              "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                              selectedTipPercent === percent
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-background border border-border hover:border-primary/50"
+                            )}
+                          >
+                            {percent}%
+                            <span className="block text-xs opacity-75">
+                              ${(formData.amount * percent / 100).toFixed(2)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex gap-2 items-end">
+                        <div className="flex-1 space-y-1">
+                          <Label className="text-xs">Custom tip ($)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={tipAmount || ""}
+                            onChange={(e) => handleCustomTip(e.target.value)}
+                            placeholder="0.00"
+                            className="h-9"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={applyTip}
+                          disabled={tipAmount <= 0}
+                          className="h-9"
+                        >
+                          Add ${tipAmount.toFixed(2)}
+                        </Button>
+                      </div>
+
+                      {tipAmount > 0 && (
+                        <div className="text-sm text-foreground font-medium pt-1 border-t border-border">
+                          New total: ${(formData.amount + tipAmount).toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
