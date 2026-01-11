@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, Edit, Trash2, Star, Eye, EyeOff, ImageIcon } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Star, Eye, EyeOff, ImageIcon, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useMenuItems, useCreateMenuItem, useUpdateMenuItem, useDeleteMenuItem } from "@/hooks/useMenuItems";
@@ -7,6 +7,8 @@ import { MenuItemDialog } from "@/components/dialogs/MenuItemDialog";
 import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog";
 import { Tables } from "@/integrations/supabase/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 type MenuItem = Tables<"menu_items">;
 
@@ -18,6 +20,9 @@ export function MenuView() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [isGeneratingImages, setIsGeneratingImages] = useState(false);
+  const [generatingItemId, setGeneratingItemId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: menuItems = [], isLoading } = useMenuItems();
   const createItem = useCreateMenuItem();
@@ -72,6 +77,63 @@ export function MenuView() {
     setDeleteDialogOpen(true);
   };
 
+  const generateImageForItem = async (item: MenuItem) => {
+    setGeneratingItemId(item.id);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-menu-image`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            menuItemId: item.id,
+            name: item.name,
+            description: item.description,
+            category: item.category,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate image");
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["menu_items"] });
+      toast.success(`Generated image for ${item.name}`);
+    } catch (error) {
+      console.error("Error generating image:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to generate image");
+    } finally {
+      setGeneratingItemId(null);
+    }
+  };
+
+  const generateAllMissingImages = async () => {
+    const itemsWithoutImages = menuItems.filter((item) => !item.image_url);
+    
+    if (itemsWithoutImages.length === 0) {
+      toast.info("All menu items already have images");
+      return;
+    }
+
+    setIsGeneratingImages(true);
+    toast.info(`Generating images for ${itemsWithoutImages.length} items...`);
+
+    for (const item of itemsWithoutImages) {
+      await generateImageForItem(item);
+      // Small delay between requests to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    setIsGeneratingImages(false);
+    toast.success("Finished generating all images!");
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -80,10 +142,27 @@ export function MenuView() {
           <h1 className="font-display text-3xl font-bold text-foreground">Menu Management</h1>
           <p className="text-muted-foreground mt-1">Update dishes, prices, and availability</p>
         </div>
-        <Button className="gap-2" onClick={() => { setSelectedItem(null); setDialogOpen(true); }}>
-          <Plus className="h-4 w-4" />
-          Add Dish
-        </Button>
+        <div className="flex gap-2">
+          {menuItems.some((item) => !item.image_url) && (
+            <Button 
+              variant="outline" 
+              className="gap-2" 
+              onClick={generateAllMissingImages}
+              disabled={isGeneratingImages}
+            >
+              {isGeneratingImages ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {isGeneratingImages ? "Generating..." : "Generate All Images"}
+            </Button>
+          )}
+          <Button className="gap-2" onClick={() => { setSelectedItem(null); setDialogOpen(true); }}>
+            <Plus className="h-4 w-4" />
+            Add Dish
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -149,9 +228,25 @@ export function MenuView() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ImageIcon className="h-12 w-12 text-muted-foreground/30" />
-                  </div>
+                  <button
+                    onClick={() => generateImageForItem(item)}
+                    disabled={generatingItemId === item.id || isGeneratingImages}
+                    className="w-full h-full flex flex-col items-center justify-center gap-2 hover:bg-secondary/80 transition-colors group"
+                  >
+                    {generatingItemId === item.id ? (
+                      <>
+                        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                        <span className="text-xs text-muted-foreground">Generating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-8 w-8 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                          Click to generate
+                        </span>
+                      </>
+                    )}
+                  </button>
                 )}
                 {item.popular && (
                   <div className="absolute top-2 left-2 px-2 py-1 rounded-lg bg-primary/90 backdrop-blur-sm flex items-center gap-1">
