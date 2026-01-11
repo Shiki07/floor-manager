@@ -44,13 +44,9 @@ export function useUpdateTableStatus() {
       return data;
     },
     onMutate: async ({ id, status }) => {
-      // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["floor-tables"] });
-
-      // Snapshot the previous value
       const previousTables = queryClient.getQueryData<FloorTable[]>(["floor-tables"]);
 
-      // Optimistically update to the new value
       if (previousTables) {
         queryClient.setQueryData<FloorTable[]>(
           ["floor-tables"],
@@ -63,7 +59,6 @@ export function useUpdateTableStatus() {
       return { previousTables };
     },
     onError: (err, _, context) => {
-      // Rollback on error
       if (context?.previousTables) {
         queryClient.setQueryData(["floor-tables"], context.previousTables);
       }
@@ -71,6 +66,85 @@ export function useUpdateTableStatus() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["floor-tables"] });
+    },
+  });
+}
+
+export function useCreateFloorTable() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ table_number, seats }: { table_number: number; seats: number }) => {
+      const { data, error } = await supabase
+        .from("floor_tables")
+        .insert({ table_number, seats, status: "available" })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["floor-tables"] });
+      toast.success("Table added successfully");
+    },
+    onError: (error: Error) => {
+      if (error.message.includes("duplicate")) {
+        toast.error("A table with this number already exists");
+      } else {
+        toast.error("Failed to add table");
+      }
+    },
+  });
+}
+
+export function useUpdateFloorTable() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, seats, table_number }: { id: string; seats: number; table_number: number }) => {
+      const { data, error } = await supabase
+        .from("floor_tables")
+        .update({ seats, table_number })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["floor-tables"] });
+      toast.success("Table updated successfully");
+    },
+    onError: (error: Error) => {
+      if (error.message.includes("duplicate")) {
+        toast.error("A table with this number already exists");
+      } else {
+        toast.error("Failed to update table");
+      }
+    },
+  });
+}
+
+export function useDeleteFloorTable() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("floor_tables")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["floor-tables"] });
+      toast.success("Table removed successfully");
+    },
+    onError: () => {
+      toast.error("Failed to remove table");
     },
   });
 }
