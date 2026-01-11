@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 type InventoryItem = Tables<"inventory_items">;
 
-const categories = ["All", "Proteins", "Produce", "Dairy", "Dry Goods", "Beverages", "Supplies"];
+const categories = ["All", "Proteins", "Produce", "Dairy", "Dry Goods", "Beverages", "Supplies", "Kitchen Equipment", "Oils & Fats", "Meat", "Seafood", "Herbs & Spices"];
 
 export function InventoryView() {
   const [selectedCategory, setSelectedCategory] = useState("All");

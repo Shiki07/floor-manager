@@ -74,6 +74,26 @@ export const inventoryItemSchema = z.object({
     .max(100, 'Supplier name must be less than 100 characters')
     .optional()
     .or(z.literal('')),
+  last_maintenance_date: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format')
+    .optional()
+    .or(z.literal(''))
+    .nullable(),
+  next_maintenance_date: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format')
+    .optional()
+    .or(z.literal(''))
+    .nullable(),
+  maintenance_interval_days: z.number()
+    .int('Maintenance interval must be a whole number')
+    .min(0, 'Maintenance interval cannot be negative')
+    .optional()
+    .nullable(),
+  maintenance_notes: z.string()
+    .max(500, 'Maintenance notes must be less than 500 characters')
+    .optional()
+    .or(z.literal(''))
+    .nullable(),
 });
 
 export type InventoryItemInput = z.infer<typeof inventoryItemSchema>;
