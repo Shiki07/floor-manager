@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -24,6 +23,7 @@ import {
   useDeleteFloorTable,
   FloorTable,
 } from "@/hooks/useFloorTables";
+import { useIsManager } from "@/hooks/useUserRole";
 import { Plus, Pencil, Trash2, X, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +37,7 @@ export function TableManagementDialog({ open, onOpenChange }: TableManagementDia
   const createTable = useCreateFloorTable();
   const updateTable = useUpdateFloorTable();
   const deleteTable = useDeleteFloorTable();
+  const { isManager } = useIsManager();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState({ table_number: 0, seats: 0 });
@@ -96,7 +97,9 @@ export function TableManagementDialog({ open, onOpenChange }: TableManagementDia
         <DialogHeader>
           <DialogTitle className="font-display text-xl">Manage Floor Tables</DialogTitle>
           <DialogDescription>
-            Add, edit, or remove tables from your floor plan. Set the number of seats for each table.
+            {isManager 
+              ? "Add, edit, or remove tables from your floor plan. Set the number of seats for each table."
+              : "View floor plan tables. Contact a manager to add or remove tables."}
           </DialogDescription>
         </DialogHeader>
 
@@ -112,7 +115,7 @@ export function TableManagementDialog({ open, onOpenChange }: TableManagementDia
                   <TableHead className="w-[120px]">Table #</TableHead>
                   <TableHead className="w-[120px]">Seats</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right w-[120px]">Actions</TableHead>
+                  {isManager && <TableHead className="text-right w-[120px]">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -162,54 +165,56 @@ export function TableManagementDialog({ open, onOpenChange }: TableManagementDia
                         {table.status}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right">
-                      {editingId === table.id ? (
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-success hover:text-success"
-                            onClick={handleSaveEdit}
-                            disabled={updateTable.isPending}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            onClick={handleCancelEdit}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            onClick={() => handleStartEdit(table)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(table.id)}
-                            disabled={deleteTable.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
+                    {isManager && (
+                      <TableCell className="text-right">
+                        {editingId === table.id ? (
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-success hover:text-success"
+                              onClick={handleSaveEdit}
+                              disabled={updateTable.isPending}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={handleCancelEdit}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => handleStartEdit(table)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => handleDelete(table.id)}
+                              disabled={deleteTable.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
 
-                {/* Add new table row */}
-                {isAdding && (
+                {/* Add new table row - only for managers */}
+                {isAdding && isManager && (
                   <TableRow>
                     <TableCell>
                       <Input
@@ -264,15 +269,19 @@ export function TableManagementDialog({ open, onOpenChange }: TableManagementDia
         </div>
 
         <div className="flex justify-between pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={handleStartAdd}
-            disabled={isAdding}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Table
-          </Button>
+          {isManager ? (
+            <Button
+              variant="outline"
+              onClick={handleStartAdd}
+              disabled={isAdding}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Table
+            </Button>
+          ) : (
+            <div />
+          )}
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Done
           </Button>

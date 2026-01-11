@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useFloorTables, useUpdateTableStatus, TableStatus as TStatus } from "@/hooks/useFloorTables";
+import { useIsManager } from "@/hooks/useUserRole";
 import { Loader2, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TableManagementDialog } from "@/components/dialogs/TableManagementDialog";
@@ -17,6 +18,7 @@ const statusOrder: TStatus[] = ["available", "occupied", "reserved", "cleaning"]
 export function TableStatus() {
   const { data: tables = [], isLoading } = useFloorTables();
   const updateStatus = useUpdateTableStatus();
+  const { isManager } = useIsManager();
   const [managementOpen, setManagementOpen] = useState(false);
 
   const cycleStatus = (tableId: string, currentStatus: TStatus) => {
@@ -45,15 +47,17 @@ export function TableStatus() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <h3 className="font-display text-lg font-semibold text-foreground">Floor Plan</h3>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setManagementOpen(true)}
-              title="Manage Tables"
-            >
-              <Settings2 className="h-4 w-4" />
-            </Button>
+            {isManager && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setManagementOpen(true)}
+                title="Manage Tables"
+              >
+                <Settings2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           <div className="flex gap-4 text-xs">
             <span className="text-success">{counts.available} free</span>
@@ -65,13 +69,15 @@ export function TableStatus() {
         {tables.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <p>No tables configured yet.</p>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => setManagementOpen(true)}
-            >
-              Add Tables
-            </Button>
+            {isManager && (
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => setManagementOpen(true)}
+              >
+                Add Tables
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-3">
@@ -88,6 +94,9 @@ export function TableStatus() {
               >
                 <span className="font-display font-bold text-lg">T{table.table_number}</span>
                 <span className="block text-xs opacity-75">{table.seats} seats</span>
+                <span className="block text-[10px] font-medium uppercase tracking-wide mt-1 opacity-90">
+                  {table.status}
+                </span>
               </button>
             ))}
           </div>
