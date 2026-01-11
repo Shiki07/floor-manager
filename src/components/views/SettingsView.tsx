@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Save, Bell, Clock, Globe, Shield, Palette, Users, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { UserRoleManagement } from "@/components/settings/UserRoleManagement";
 
 const settingsSections = [
   { id: "general", label: "General", icon: Globe },
@@ -9,7 +10,7 @@ const settingsSections = [
   { id: "hours", label: "Operating Hours", icon: Clock },
   { id: "security", label: "Security", icon: Shield },
   { id: "appearance", label: "Appearance", icon: Palette },
-  { id: "team", label: "Team", icon: Users },
+  { id: "team", label: "Team & Roles", icon: Users },
   { id: "billing", label: "Billing", icon: CreditCard },
 ];
 
@@ -184,7 +185,14 @@ export function SettingsView() {
             </div>
           )}
 
-          {(activeSection === "security" || activeSection === "appearance" || activeSection === "team" || activeSection === "billing") && (
+          {activeSection === "team" && (
+            <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
+              <h2 className="font-display text-xl font-semibold text-foreground mb-6">Team & Role Management</h2>
+              <UserRoleManagement />
+            </div>
+          )}
+
+          {(activeSection === "security" || activeSection === "appearance" || activeSection === "billing") && (
             <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
               <h2 className="font-display text-xl font-semibold text-foreground mb-6 capitalize">{activeSection} Settings</h2>
               <p className="text-muted-foreground">Configure your {activeSection} preferences here. This section is under development.</p>
