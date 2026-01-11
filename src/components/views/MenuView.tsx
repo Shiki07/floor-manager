@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, Edit, Trash2, Star, Eye, EyeOff } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Star, Eye, EyeOff, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useMenuItems, useCreateMenuItem, useUpdateMenuItem, useDeleteMenuItem } from "@/hooks/useMenuItems";
@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 type MenuItem = Tables<"menu_items">;
 
-const categories = ["All", "Appetizers", "Mains", "Desserts", "Drinks", "Specials"];
+const categories = ["All", "Starters", "Main Courses", "Desserts", "Beverages", "Specials"];
 
 export function MenuView() {
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -135,67 +135,80 @@ export function MenuView() {
             <div
               key={item.id}
               className={cn(
-                "rounded-2xl bg-card p-5 shadow-card transition-all duration-300 hover:shadow-elevated hover:-translate-y-1 animate-fade-in opacity-0",
+                "rounded-2xl bg-card overflow-hidden shadow-card transition-all duration-300 hover:shadow-elevated hover:-translate-y-1 animate-fade-in opacity-0",
                 !item.available && "opacity-60"
               )}
               style={{ animationDelay: `${200 + index * 50}ms` }}
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-foreground">{item.name}</h3>
-                    {item.popular && (
-                      <Star className="h-4 w-4 text-primary fill-primary" />
-                    )}
+              {/* Image */}
+              <div className="h-40 bg-secondary relative">
+                {item.image_url ? (
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageIcon className="h-12 w-12 text-muted-foreground/30" />
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {item.description}
-                  </p>
-                </div>
+                )}
+                {item.popular && (
+                  <div className="absolute top-2 left-2 px-2 py-1 rounded-lg bg-primary/90 backdrop-blur-sm flex items-center gap-1">
+                    <Star className="h-3 w-3 text-primary-foreground fill-primary-foreground" />
+                    <span className="text-xs font-medium text-primary-foreground">Popular</span>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-xl font-display font-bold text-primary">
-                  ${item.price.toFixed(2)}
-                </span>
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-semibold text-foreground">{item.name}</h3>
+                  <span className="text-lg font-display font-bold text-primary">
+                    ${item.price.toFixed(2)}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                  {item.description}
+                </p>
                 <span className="text-xs px-2 py-1 rounded-lg bg-secondary text-secondary-foreground">
                   {item.category}
                 </span>
-              </div>
 
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                <button
-                  onClick={() => toggleAvailability(item)}
-                  className={cn(
-                    "flex items-center gap-1 text-sm",
-                    item.available ? "text-success" : "text-muted-foreground"
-                  )}
-                >
-                  {item.available ? (
-                    <>
-                      <Eye className="h-4 w-4" />
-                      Available
-                    </>
-                  ) : (
-                    <>
-                      <EyeOff className="h-4 w-4" />
-                      Hidden
-                    </>
-                  )}
-                </button>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => openEditDialog(item)}
-                    className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+                  <button
+                    onClick={() => toggleAvailability(item)}
+                    className={cn(
+                      "flex items-center gap-1 text-sm",
+                      item.available ? "text-success" : "text-muted-foreground"
+                    )}
                   >
-                    <Edit className="h-4 w-4 text-muted-foreground" />
+                    {item.available ? (
+                      <>
+                        <Eye className="h-4 w-4" />
+                        Available
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="h-4 w-4" />
+                        Hidden
+                      </>
+                    )}
                   </button>
-                  <button 
-                    onClick={() => openDeleteDialog(item)}
-                    className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => openEditDialog(item)}
+                      className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                    >
+                      <Edit className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    <button 
+                      onClick={() => openDeleteDialog(item)}
+                      className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
