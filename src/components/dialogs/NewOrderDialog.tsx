@@ -56,7 +56,14 @@ export function NewOrderDialog({
   const { data: tables = [] } = useFloorTables();
 
   const availableItems = menuItems.filter((item) => item.available);
-  const categories = ["All", ...new Set(availableItems.map((item) => item.category))];
+  const categoryOrder = ["Starters", "Main Courses", "Desserts", "Beverages", "Specials"];
+  const uniqueCategories = [...new Set(availableItems.map((item) => item.category))];
+  const sortedCategories = uniqueCategories.sort((a, b) => {
+    const indexA = categoryOrder.indexOf(a);
+    const indexB = categoryOrder.indexOf(b);
+    return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+  });
+  const categories = ["All", ...sortedCategories];
 
   const filteredItems = selectedCategory === "All"
     ? availableItems
