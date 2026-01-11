@@ -1,13 +1,16 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+
+type TableStatus = "available" | "occupied" | "reserved" | "cleaning";
 
 interface Table {
   id: string;
   number: number;
   seats: number;
-  status: "available" | "occupied" | "reserved" | "cleaning";
+  status: TableStatus;
 }
 
-const tables: Table[] = [
+const initialTables: Table[] = [
   { id: "1", number: 1, seats: 2, status: "available" },
   { id: "2", number: 2, seats: 2, status: "occupied" },
   { id: "3", number: 3, seats: 4, status: "occupied" },
@@ -29,7 +32,22 @@ const statusColors = {
   cleaning: "bg-muted border-muted-foreground text-muted-foreground",
 };
 
+const statusOrder: TableStatus[] = ["available", "occupied", "reserved", "cleaning"];
+
 export function TableStatus() {
+  const [tables, setTables] = useState<Table[]>(initialTables);
+
+  const cycleStatus = (tableId: string) => {
+    setTables((prev) =>
+      prev.map((table) => {
+        if (table.id !== tableId) return table;
+        const currentIndex = statusOrder.indexOf(table.status);
+        const nextIndex = (currentIndex + 1) % statusOrder.length;
+        return { ...table, status: statusOrder[nextIndex] };
+      })
+    );
+  };
+
   const counts = {
     available: tables.filter((t) => t.status === "available").length,
     occupied: tables.filter((t) => t.status === "occupied").length,
@@ -51,8 +69,9 @@ export function TableStatus() {
         {tables.map((table, index) => (
           <button
             key={table.id}
+            onClick={() => cycleStatus(table.id)}
             className={cn(
-              "relative p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 animate-fade-in",
+              "relative p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer animate-fade-in",
               statusColors[table.status]
             )}
             style={{ animationDelay: `${550 + index * 50}ms` }}
