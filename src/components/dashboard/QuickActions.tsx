@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Plus, ClipboardList, Bell, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ReservationDialog } from "@/components/dialogs/ReservationDialog";
+import { NewOrderDialog } from "@/components/dialogs/NewOrderDialog";
 import { useCreateReservation } from "@/hooks/useReservations";
+import { useCreateOrder } from "@/hooks/useOrders";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -18,14 +20,14 @@ interface QuickActionsProps {
 
 export function QuickActions({ onNavigate }: QuickActionsProps) {
   const [reservationOpen, setReservationOpen] = useState(false);
+  const [orderOpen, setOrderOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const createReservation = useCreateReservation();
+  const createOrder = useCreateOrder();
 
   const handleNewOrder = () => {
-    toast.info("New Order", {
-      description: "Order management feature coming soon!",
-    });
+    setOrderOpen(true);
   };
 
   const handleReservation = () => {
@@ -43,6 +45,11 @@ export function QuickActions({ onNavigate }: QuickActionsProps) {
   const handleReservationSubmit = async (data: any) => {
     await createReservation.mutateAsync(data);
     setReservationOpen(false);
+  };
+
+  const handleOrderSubmit = async (data: any) => {
+    await createOrder.mutateAsync(data);
+    setOrderOpen(false);
   };
 
   const sendKitchenAlert = (message: string) => {
@@ -97,6 +104,14 @@ export function QuickActions({ onNavigate }: QuickActionsProps) {
         onOpenChange={setReservationOpen}
         onSubmit={handleReservationSubmit}
         isLoading={createReservation.isPending}
+      />
+
+      {/* New Order Dialog */}
+      <NewOrderDialog
+        open={orderOpen}
+        onOpenChange={setOrderOpen}
+        onSubmit={handleOrderSubmit}
+        isLoading={createOrder.isPending}
       />
 
       {/* Kitchen Alert Dialog */}
