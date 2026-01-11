@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      floor_tables: {
+        Row: {
+          created_at: string
+          id: string
+          seats: number
+          status: string
+          table_number: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          seats?: number
+          status?: string
+          table_number: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          seats?: number
+          status?: string
+          table_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory_items: {
         Row: {
           category: string
