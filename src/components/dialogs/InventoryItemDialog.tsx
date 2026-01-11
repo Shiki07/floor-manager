@@ -16,7 +16,7 @@ interface InventoryItemDialogProps {
   isLoading?: boolean;
 }
 
-const categories = ["Proteins", "Produce", "Dairy", "Dry Goods", "Beverages", "Supplies"];
+const categories = ["Proteins", "Produce", "Dairy", "Dry Goods", "Beverages", "Supplies", "Kitchen Equipment", "Oils & Fats", "Meat", "Seafood", "Herbs & Spices"];
 
 export function InventoryItemDialog({ open, onOpenChange, item, onSubmit, isLoading }: InventoryItemDialogProps) {
   const [formData, setFormData] = useState({
@@ -28,6 +28,10 @@ export function InventoryItemDialog({ open, onOpenChange, item, onSubmit, isLoad
     unit: "",
     cost_per_unit: 0,
     supplier: "",
+    last_maintenance_date: "",
+    next_maintenance_date: "",
+    maintenance_interval_days: 0,
+    maintenance_notes: "",
   });
 
   useEffect(() => {
@@ -41,6 +45,10 @@ export function InventoryItemDialog({ open, onOpenChange, item, onSubmit, isLoad
         unit: item.unit || "",
         cost_per_unit: item.cost_per_unit || 0,
         supplier: item.supplier || "",
+        last_maintenance_date: item.last_maintenance_date || "",
+        next_maintenance_date: item.next_maintenance_date || "",
+        maintenance_interval_days: item.maintenance_interval_days || 0,
+        maintenance_notes: item.maintenance_notes || "",
       });
     } else {
       setFormData({
@@ -52,6 +60,10 @@ export function InventoryItemDialog({ open, onOpenChange, item, onSubmit, isLoad
         unit: "",
         cost_per_unit: 0,
         supplier: "",
+        last_maintenance_date: "",
+        next_maintenance_date: "",
+        maintenance_interval_days: 0,
+        maintenance_notes: "",
       });
     }
   }, [item, open]);
@@ -63,7 +75,7 @@ export function InventoryItemDialog({ open, onOpenChange, item, onSubmit, isLoad
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{item ? "Edit Inventory Item" : "Add Inventory Item"}</DialogTitle>
         </DialogHeader>
@@ -160,6 +172,57 @@ export function InventoryItemDialog({ open, onOpenChange, item, onSubmit, isLoad
               onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
             />
           </div>
+
+          {/* Maintenance Tracking Section */}
+          {formData.category === "Kitchen Equipment" && (
+            <>
+              <div className="border-t border-border pt-4 mt-4">
+                <h4 className="text-sm font-semibold text-foreground mb-3">Maintenance Tracking</h4>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="last_maintenance_date">Last Maintenance</Label>
+                  <Input
+                    id="last_maintenance_date"
+                    type="date"
+                    value={formData.last_maintenance_date}
+                    onChange={(e) => setFormData({ ...formData, last_maintenance_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="next_maintenance_date">Next Maintenance</Label>
+                  <Input
+                    id="next_maintenance_date"
+                    type="date"
+                    value={formData.next_maintenance_date}
+                    onChange={(e) => setFormData({ ...formData, next_maintenance_date: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="maintenance_interval_days">Interval (days)</Label>
+                  <Input
+                    id="maintenance_interval_days"
+                    type="number"
+                    min="0"
+                    value={formData.maintenance_interval_days}
+                    onChange={(e) => setFormData({ ...formData, maintenance_interval_days: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maintenance_notes">Maintenance Notes</Label>
+                  <Input
+                    id="maintenance_notes"
+                    value={formData.maintenance_notes}
+                    onChange={(e) => setFormData({ ...formData, maintenance_notes: e.target.value })}
+                    placeholder="e.g. Check blade sharpness"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
