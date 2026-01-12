@@ -10,7 +10,11 @@ import { useStaffMembers } from "@/hooks/useStaffMembers";
 import { useReservations } from "@/hooks/useReservations";
 import { useMenuItems } from "@/hooks/useMenuItems";
 
-export function DashboardView() {
+interface DashboardViewProps {
+  onTakeOrder?: () => void;
+}
+
+export function DashboardView({ onTakeOrder }: DashboardViewProps) {
   const today = new Date().toISOString().split("T")[0];
   const { data: staffMembers = [] } = useStaffMembers();
   const { data: reservations = [] } = useReservations(today);
@@ -78,7 +82,7 @@ export function DashboardView() {
 
         {/* Right Column - stacks on tablet beside charts on xl */}
         <div className="md:col-span-2 xl:col-span-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4 md:gap-5 lg:gap-6">
-          <QuickActions />
+          <QuickActions onTakeOrder={onTakeOrder} />
           <StaffSchedule />
         </div>
       </div>
