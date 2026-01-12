@@ -73,24 +73,32 @@ export function DashboardView({ onTakeOrder }: DashboardViewProps) {
         />
       </div>
 
-      {/* Main Content Grid - optimized for tablet */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
-        {/* Charts - full width on mobile, spans 2 on tablet, 2 on desktop */}
-        <div className="md:col-span-2 xl:col-span-2 space-y-4 md:space-y-5 lg:space-y-6">
+      {/* Main Content Grid - optimized for tablet portrait & landscape */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-5">
+        {/* Live Orders - Priority on portrait tablets */}
+        <div className="lg:col-span-2">
           <LiveOrdersWidget />
+        </div>
+
+        {/* Quick Actions - Always visible */}
+        <div className="lg:col-span-1">
+          <QuickActions onTakeOrder={onTakeOrder} />
+        </div>
+
+        {/* Charts & Floor Plan - Full width sections */}
+        <div className="lg:col-span-2 space-y-3 md:space-y-4">
           <OrdersChart />
           <TableStatus />
         </div>
 
-        {/* Right Column - stacks on tablet beside charts on xl */}
-        <div className="md:col-span-2 xl:col-span-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4 md:gap-5 lg:gap-6">
-          <QuickActions onTakeOrder={onTakeOrder} />
+        {/* Staff Schedule */}
+        <div className="lg:col-span-1">
           <StaffSchedule />
         </div>
       </div>
 
       {/* Bottom Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 lg:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 lg:gap-5">
         <ReservationsWidget />
         <InventoryAlerts />
       </div>

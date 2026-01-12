@@ -237,8 +237,8 @@ export function OrderTakingView({ onBack }: OrderTakingViewProps) {
           </ScrollArea>
         </div>
 
-        {/* Right Side - Current Order */}
-        <div className="w-full md:w-80 lg:w-96 flex flex-col bg-card border-t md:border-t-0 shrink-0 max-h-[40vh] md:max-h-none">
+        {/* Right Side - Current Order - Full width on portrait tablets, fixed width on landscape */}
+        <div className="w-full md:w-72 lg:w-80 xl:w-96 flex flex-col bg-card border-t md:border-t-0 shrink-0 max-h-[45vh] md:max-h-none">
           {/* Order Header */}
           <div className="p-3 md:p-4 border-b border-border shrink-0">
             <div className="flex items-center justify-between mb-3">
