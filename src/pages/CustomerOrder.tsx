@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { 
   Plus, 
   Minus, 
@@ -94,8 +95,10 @@ export default function CustomerOrder() {
       toast.success("Order placed successfully!");
     },
     onError: (error) => {
-      toast.error("Failed to place order. Please try again.");
-      console.error(error);
+      toast.error(getSafeErrorMessage(error));
+      if (import.meta.env.DEV) {
+        console.error(error);
+      }
     },
   });
 
@@ -342,10 +345,16 @@ export default function CustomerOrder() {
             <Textarea
               placeholder="Special requests or allergies..."
               value={orderNotes}
-              onChange={(e) => setOrderNotes(e.target.value)}
+              onChange={(e) => setOrderNotes(e.target.value.slice(0, 500))}
               className="mb-3 text-sm"
               rows={2}
+              maxLength={500}
             />
+            {orderNotes.length > 400 && (
+              <p className="text-xs text-muted-foreground mb-2">
+                {500 - orderNotes.length} characters remaining
+              </p>
+            )}
 
             {/* Place Order Button */}
             <Button 

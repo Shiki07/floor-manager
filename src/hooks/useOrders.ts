@@ -38,10 +38,13 @@ export function useCreateOrder() {
     mutationFn: async ({ table_number, notes, items }: CreateOrderData) => {
       const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
+      // Validate and sanitize notes (max 500 chars)
+      const sanitizedNotes = notes?.slice(0, 500)?.trim() || undefined;
+      
       // Create the order
       const { data: order, error: orderError } = await supabase
         .from("orders")
-        .insert({ table_number, notes, total, status: "pending" })
+        .insert({ table_number, notes: sanitizedNotes, total, status: "pending" })
         .select()
         .single();
       
