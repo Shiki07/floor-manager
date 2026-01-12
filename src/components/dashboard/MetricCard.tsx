@@ -23,21 +23,21 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl bg-card p-6 shadow-card transition-all duration-300 hover:shadow-elevated hover:-translate-y-1 animate-fade-in",
+        "relative overflow-hidden rounded-xl md:rounded-2xl bg-card p-4 md:p-5 lg:p-6 shadow-card transition-all duration-300 hover:shadow-elevated hover:-translate-y-1 animate-fade-in",
         className
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="absolute top-0 right-0 w-32 h-32 gradient-glow opacity-50" />
+      <div className="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 gradient-glow opacity-50" />
       
-      <div className="relative flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-display font-bold text-foreground">{value}</p>
+      <div className="relative flex items-start justify-between gap-2">
+        <div className="space-y-1 md:space-y-2 min-w-0 flex-1">
+          <p className="text-xs md:text-sm font-medium text-muted-foreground truncate">{title}</p>
+          <p className="text-2xl md:text-3xl font-display font-bold text-foreground">{value}</p>
           {change && (
             <p
               className={cn(
-                "text-sm font-medium",
+                "text-xs md:text-sm font-medium truncate",
                 changeType === "positive" && "text-success",
                 changeType === "negative" && "text-destructive",
                 changeType === "neutral" && "text-muted-foreground"
@@ -47,8 +47,8 @@ export function MetricCard({
             </p>
           )}
         </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-          <Icon className="h-6 w-6 text-primary" />
+        <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-lg md:rounded-xl bg-primary/10 shrink-0">
+          <Icon className="h-5 w-5 md:h-6 md:w-6 text-primary" />
         </div>
       </div>
     </div>

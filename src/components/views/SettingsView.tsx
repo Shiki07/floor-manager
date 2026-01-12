@@ -30,10 +30,10 @@ export function SettingsView() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar - horizontal scroll on mobile */}
-        <div className="rounded-2xl bg-card p-3 sm:p-4 shadow-card h-fit animate-fade-in opacity-0 lg:order-none order-first" style={{ animationDelay: "100ms" }}>
-          <nav className="flex lg:flex-col gap-1 overflow-x-auto pb-2 lg:pb-0 lg:space-y-1">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-5 lg:gap-6">
+        {/* Sidebar - horizontal scroll on mobile, vertical on tablet+ */}
+        <div className="rounded-xl md:rounded-2xl bg-card p-3 md:p-4 shadow-card h-fit animate-fade-in opacity-0 md:order-none order-first" style={{ animationDelay: "100ms" }}>
+          <nav className="flex md:flex-col gap-1 overflow-x-auto pb-2 md:pb-0 md:space-y-1">
             {settingsSections.map((section, index) => {
               const Icon = section.icon;
               return (
@@ -41,15 +41,15 @@ export function SettingsView() {
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={cn(
-                    "flex items-center gap-2 lg:gap-3 rounded-xl px-3 lg:px-4 py-2 lg:py-3 text-sm font-medium transition-all animate-fade-in opacity-0 whitespace-nowrap shrink-0 lg:w-full",
+                    "flex items-center gap-2 md:gap-3 rounded-lg md:rounded-xl px-3 md:px-4 py-2 md:py-3 text-sm font-medium transition-all animate-fade-in opacity-0 whitespace-nowrap shrink-0 md:w-full",
                     activeSection === section.id
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                   )}
                   style={{ animationDelay: `${150 + index * 50}ms` }}
                 >
-                  <Icon className="h-4 w-4 lg:h-5 lg:w-5" />
-                  <span className="lg:inline">{section.label}</span>
+                  <Icon className="h-4 w-4 md:h-5 md:w-5" />
+                  <span>{section.label}</span>
                 </button>
               );
             })}
@@ -57,12 +57,12 @@ export function SettingsView() {
         </div>
 
         {/* Content */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="md:col-span-3 space-y-4 md:space-y-5 lg:space-y-6">
           {activeSection === "general" && (
-            <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
-              <h2 className="font-display text-xl font-semibold text-foreground mb-6">General Settings</h2>
+            <div className="rounded-xl md:rounded-2xl bg-card p-4 md:p-5 lg:p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
+              <h2 className="font-display text-lg md:text-xl font-semibold text-foreground mb-4 md:mb-6">General Settings</h2>
               
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-5 lg:space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">Restaurant Name</label>
                   <input
@@ -155,10 +155,10 @@ export function SettingsView() {
           )}
 
           {activeSection === "notifications" && (
-            <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
-              <h2 className="font-display text-xl font-semibold text-foreground mb-6">Notification Preferences</h2>
+            <div className="rounded-xl md:rounded-2xl bg-card p-4 md:p-5 lg:p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
+              <h2 className="font-display text-lg md:text-xl font-semibold text-foreground mb-4 md:mb-6">Notification Preferences</h2>
               
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {[
                   { title: "New reservations", description: "Get notified when new reservations are made" },
                   { title: "Low inventory alerts", description: "Alert when stock falls below minimum levels" },
@@ -168,14 +168,14 @@ export function SettingsView() {
                 ].map((item, index) => (
                   <div
                     key={item.title}
-                    className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 animate-fade-in opacity-0"
+                    className="flex items-center justify-between p-3 md:p-4 rounded-lg md:rounded-xl bg-secondary/50 animate-fade-in opacity-0 gap-3"
                     style={{ animationDelay: `${250 + index * 50}ms` }}
                   >
-                    <div>
-                      <p className="font-medium text-foreground">{item.title}</p>
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground text-sm md:text-base">{item.title}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground truncate">{item.description}</p>
                     </div>
-                    <button className="relative h-6 w-11 rounded-full bg-primary transition-colors">
+                    <button className="relative h-6 w-11 rounded-full bg-primary transition-colors shrink-0">
                       <span className="absolute right-1 top-1 h-4 w-4 rounded-full bg-primary-foreground transition-transform" />
                     </button>
                   </div>
@@ -185,23 +185,23 @@ export function SettingsView() {
           )}
 
           {activeSection === "team" && (
-            <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
-              <h2 className="font-display text-xl font-semibold text-foreground mb-6">Team & Role Management</h2>
+            <div className="rounded-xl md:rounded-2xl bg-card p-4 md:p-5 lg:p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
+              <h2 className="font-display text-lg md:text-xl font-semibold text-foreground mb-4 md:mb-6">Team & Role Management</h2>
               <UserRoleManagement />
             </div>
           )}
 
           {activeSection === "security" && (
-            <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
-              <h2 className="font-display text-xl font-semibold text-foreground mb-6">Security Settings</h2>
+            <div className="rounded-xl md:rounded-2xl bg-card p-4 md:p-5 lg:p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
+              <h2 className="font-display text-lg md:text-xl font-semibold text-foreground mb-4 md:mb-6">Security Settings</h2>
               <SecuritySettings />
             </div>
           )}
 
           {activeSection === "appearance" && (
-            <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
-              <h2 className="font-display text-xl font-semibold text-foreground mb-6 capitalize">Appearance Settings</h2>
-              <p className="text-muted-foreground">Configure your appearance preferences here. This section is under development.</p>
+            <div className="rounded-xl md:rounded-2xl bg-card p-4 md:p-5 lg:p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
+              <h2 className="font-display text-lg md:text-xl font-semibold text-foreground mb-4 md:mb-6 capitalize">Appearance Settings</h2>
+              <p className="text-muted-foreground text-sm md:text-base">Configure your appearance preferences here. This section is under development.</p>
             </div>
           )}
         </div>
