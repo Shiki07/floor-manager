@@ -50,6 +50,14 @@ export function useSwipeNavigation({
     }
   }, [enabled]);
 
+  // Trigger haptic feedback if supported
+  const triggerHapticFeedback = useCallback(() => {
+    // Try Vibration API first (widely supported on Android)
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10); // Short 10ms vibration
+    }
+  }, []);
+
   const handleTouchEnd = useCallback((e: TouchEvent) => {
     if (!enabled || !touchStart.current) {
       setIsSwiping(false);
@@ -62,6 +70,9 @@ export function useSwipeNavigation({
 
     // Check if swipe is valid (fast enough and far enough)
     if (deltaTime <= maxSwipeTime && Math.abs(deltaX) >= minSwipeDistance) {
+      // Trigger haptic feedback on successful swipe
+      triggerHapticFeedback();
+      
       if (deltaX > 0 && onSwipeRight) {
         onSwipeRight();
       } else if (deltaX < 0 && onSwipeLeft) {
@@ -71,7 +82,7 @@ export function useSwipeNavigation({
 
     touchStart.current = null;
     setIsSwiping(false);
-  }, [enabled, minSwipeDistance, maxSwipeTime, onSwipeLeft, onSwipeRight]);
+  }, [enabled, minSwipeDistance, maxSwipeTime, onSwipeLeft, onSwipeRight, triggerHapticFeedback]);
 
   const bindSwipeHandlers = useCallback((element: HTMLElement | null) => {
     if (!element) return;
