@@ -3,7 +3,7 @@ import { Save, Bell, Clock, Globe, Shield, Palette, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { UserRoleManagement } from "@/components/settings/UserRoleManagement";
-
+import { SecuritySettings } from "@/components/settings/SecuritySettings";
 const settingsSections = [
   { id: "general", label: "General", icon: Globe },
   { id: "notifications", label: "Notifications", icon: Bell },
@@ -191,10 +191,17 @@ export function SettingsView() {
             </div>
           )}
 
-          {(activeSection === "security" || activeSection === "appearance") && (
+          {activeSection === "security" && (
             <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
-              <h2 className="font-display text-xl font-semibold text-foreground mb-6 capitalize">{activeSection} Settings</h2>
-              <p className="text-muted-foreground">Configure your {activeSection} preferences here. This section is under development.</p>
+              <h2 className="font-display text-xl font-semibold text-foreground mb-6">Security Settings</h2>
+              <SecuritySettings />
+            </div>
+          )}
+
+          {activeSection === "appearance" && (
+            <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
+              <h2 className="font-display text-xl font-semibold text-foreground mb-6 capitalize">Appearance Settings</h2>
+              <p className="text-muted-foreground">Configure your appearance preferences here. This section is under development.</p>
             </div>
           )}
         </div>
