@@ -19,12 +19,21 @@ const ERROR_MESSAGES = {
 // Input validation helpers
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const VALID_CATEGORIES = ["Starters", "Main Courses", "Desserts", "Beverages", "Specials"];
+const VALID_ROLES = ["staff", "manager", "admin"];
+
+// Pattern to detect prompt injection attempts
+const INJECTION_PATTERN = /\b(ignore|forget|system|prompt|instruction|override|bypass|disregard|instead|actually|hidden|secret|jailbreak)\b/i;
 
 const sanitizeInput = (input: string): string => {
   return input
-    .replace(/[<>{}[\]]/g, '') // Remove potential injection characters
-    .replace(/\n{3,}/g, '\n\n') // Limit consecutive newlines
+    .replace(/[<>{}[\]\\]/g, '') // Remove potential injection characters including backslash
+    .replace(/\n+/g, ' ') // Replace all newlines with spaces
+    .slice(0, 200) // Hard limit length
     .trim();
+};
+
+const containsInjectionAttempt = (input: string): boolean => {
+  return INJECTION_PATTERN.test(input);
 };
 
 serve(async (req) => {
@@ -63,6 +72,30 @@ serve(async (req) => {
       );
     }
 
+    // Verify user has staff role or higher
+    const userId = claims.claims.sub;
+    const { data: roleData, error: roleError } = await supabaseAuth
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (roleError || !roleData) {
+      console.error("[INSUFFICIENT_PRIVILEGES]", { userId, timestamp: new Date().toISOString() });
+      return new Response(
+        JSON.stringify({ error: "Insufficient privileges" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!VALID_ROLES.includes(roleData.role)) {
+      console.error("[INSUFFICIENT_PRIVILEGES]", { userId, role: roleData.role, timestamp: new Date().toISOString() });
+      return new Response(
+        JSON.stringify({ error: "Insufficient privileges" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Parse and validate request body
     let body;
     try {
@@ -96,6 +129,15 @@ serve(async (req) => {
     if (description && (typeof description !== 'string' || description.length > 500)) {
       return new Response(
         JSON.stringify({ error: "Description must be less than 500 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check for prompt injection attempts
+    if (containsInjectionAttempt(name) || (description && containsInjectionAttempt(description))) {
+      console.error("[INJECTION_ATTEMPT]", { name, description, timestamp: new Date().toISOString() });
+      return new Response(
+        JSON.stringify({ error: "Invalid content detected" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
