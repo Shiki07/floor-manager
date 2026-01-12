@@ -19,21 +19,21 @@ export function SettingsView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between animate-fade-in opacity-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in opacity-0">
         <div>
-          <h1 className="font-display text-3xl font-bold text-foreground">Settings</h1>
-          <p className="text-muted-foreground mt-1">Manage your restaurant preferences</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">Settings</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage your restaurant preferences</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2 w-full sm:w-auto">
           <Save className="h-4 w-4" />
           Save Changes
         </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar */}
-        <div className="rounded-2xl bg-card p-4 shadow-card h-fit animate-fade-in opacity-0" style={{ animationDelay: "100ms" }}>
-          <nav className="space-y-1">
+        {/* Sidebar - horizontal scroll on mobile */}
+        <div className="rounded-2xl bg-card p-3 sm:p-4 shadow-card h-fit animate-fade-in opacity-0 lg:order-none order-first" style={{ animationDelay: "100ms" }}>
+          <nav className="flex lg:flex-col gap-1 overflow-x-auto pb-2 lg:pb-0 lg:space-y-1">
             {settingsSections.map((section, index) => {
               const Icon = section.icon;
               return (
@@ -41,15 +41,15 @@ export function SettingsView() {
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all animate-fade-in opacity-0",
+                    "flex items-center gap-2 lg:gap-3 rounded-xl px-3 lg:px-4 py-2 lg:py-3 text-sm font-medium transition-all animate-fade-in opacity-0 whitespace-nowrap shrink-0 lg:w-full",
                     activeSection === section.id
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                   )}
                   style={{ animationDelay: `${150 + index * 50}ms` }}
                 >
-                  <Icon className="h-5 w-5" />
-                  {section.label}
+                  <Icon className="h-4 w-4 lg:h-5 lg:w-5" />
+                  <span className="lg:inline">{section.label}</span>
                 </button>
               );
             })}
@@ -124,28 +124,28 @@ export function SettingsView() {
           )}
 
           {activeSection === "hours" && (
-            <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
-              <h2 className="font-display text-xl font-semibold text-foreground mb-6">Operating Hours</h2>
+            <div className="rounded-2xl bg-card p-4 sm:p-6 shadow-card animate-fade-in opacity-0" style={{ animationDelay: "200ms" }}>
+              <h2 className="font-display text-lg sm:text-xl font-semibold text-foreground mb-4 sm:mb-6">Operating Hours</h2>
               
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, index) => (
                   <div
                     key={day}
-                    className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 animate-fade-in opacity-0"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-xl bg-secondary/50 animate-fade-in opacity-0 gap-2 sm:gap-4"
                     style={{ animationDelay: `${250 + index * 50}ms` }}
                   >
-                    <span className="font-medium text-foreground w-28">{day}</span>
-                    <div className="flex items-center gap-4">
+                    <span className="font-medium text-foreground text-sm sm:text-base sm:w-28">{day}</span>
+                    <div className="flex items-center gap-2 sm:gap-4">
                       <input
                         type="time"
                         defaultValue={day === "Sunday" ? "10:00" : "11:00"}
-                        className="h-10 px-3 rounded-lg bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="h-9 sm:h-10 px-2 sm:px-3 rounded-lg bg-card border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary flex-1 sm:flex-initial"
                       />
-                      <span className="text-muted-foreground">to</span>
+                      <span className="text-muted-foreground text-sm">to</span>
                       <input
                         type="time"
                         defaultValue={day === "Sunday" ? "21:00" : "23:00"}
-                        className="h-10 px-3 rounded-lg bg-card border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="h-9 sm:h-10 px-2 sm:px-3 rounded-lg bg-card border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary flex-1 sm:flex-initial"
                       />
                     </div>
                   </div>
