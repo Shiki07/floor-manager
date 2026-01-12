@@ -35,7 +35,8 @@ const menuItems = [
 ];
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  // Default to collapsed on tablets (portrait mode optimization)
+  const [collapsed, setCollapsed] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, userRole, signOut } = useAuth();
 

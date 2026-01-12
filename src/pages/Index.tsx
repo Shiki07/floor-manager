@@ -108,11 +108,15 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar activeTab={sidebarActiveTab} onTabChange={handleTabChange} />
-      {/* Main content - responsive padding for mobile/tablet/desktop */}
+      {/* Main content - responsive padding for mobile/tablet portrait/tablet landscape/desktop */}
       <main 
         ref={swipeRef}
         className={cn(
-          "min-h-screen pt-14 md:pt-0 md:pl-64 transition-transform duration-300",
+          "min-h-screen transition-transform duration-300",
+          // Mobile: top padding for header
+          "pt-14",
+          // Tablet and up: left padding for sidebar (collapsed by default = 80px)
+          "md:pt-0 md:pl-20",
           swipeDirection === 'left' && "animate-slide-in-right",
           swipeDirection === 'right' && "animate-slide-in-left"
         )}
@@ -120,7 +124,7 @@ const Index = () => {
         {activeTab === "orders" ? (
           renderView()
         ) : (
-          <div className="p-4 sm:p-5 md:p-6 lg:p-8">
+          <div className="p-3 sm:p-4 md:p-5 lg:p-6 xl:p-8">
             {renderView()}
           </div>
         )}
