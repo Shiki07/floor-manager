@@ -2,9 +2,10 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useFloorTables, useUpdateTableStatus, TableStatus as TStatus } from "@/hooks/useFloorTables";
 import { useIsManager } from "@/hooks/useUserRole";
-import { Loader2, Settings2 } from "lucide-react";
+import { Loader2, Settings2, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TableManagementDialog } from "@/components/dialogs/TableManagementDialog";
+import { TableQRDialog } from "@/components/dialogs/TableQRDialog";
 
 const statusColors = {
   available: "bg-success/20 border-success text-success",
@@ -20,6 +21,7 @@ export function TableStatus() {
   const updateStatus = useUpdateTableStatus();
   const { isManager } = useIsManager();
   const [managementOpen, setManagementOpen] = useState(false);
+  const [qrDialogTable, setQrDialogTable] = useState<number | null>(null);
 
   const cycleStatus = (tableId: string, currentStatus: TStatus) => {
     const currentIndex = statusOrder.indexOf(currentStatus);
@@ -82,22 +84,38 @@ export function TableStatus() {
         ) : (
           <div className="grid grid-cols-4 gap-3">
             {tables.map((table, index) => (
-              <button
+              <div
                 key={table.id}
-                onClick={() => cycleStatus(table.id, table.status)}
-                disabled={updateStatus.isPending}
                 className={cn(
-                  "relative p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer animate-fade-in disabled:opacity-50",
+                  "relative p-4 rounded-xl border-2 transition-all duration-200 animate-fade-in",
                   statusColors[table.status]
                 )}
                 style={{ animationDelay: `${550 + index * 50}ms` }}
               >
-                <span className="font-display font-bold text-lg">T{table.table_number}</span>
-                <span className="block text-xs opacity-75">{table.seats} seats</span>
-                <span className="block text-[10px] font-medium uppercase tracking-wide mt-1 opacity-90">
-                  {table.status}
-                </span>
-              </button>
+                <button
+                  onClick={() => cycleStatus(table.id, table.status)}
+                  disabled={updateStatus.isPending}
+                  className="w-full text-left hover:opacity-80 transition-opacity disabled:opacity-50"
+                >
+                  <span className="font-display font-bold text-lg">T{table.table_number}</span>
+                  <span className="block text-xs opacity-75">{table.seats} seats</span>
+                  <span className="block text-[10px] font-medium uppercase tracking-wide mt-1 opacity-90">
+                    {table.status}
+                  </span>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-1 right-1 h-6 w-6 opacity-60 hover:opacity-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setQrDialogTable(table.table_number);
+                  }}
+                  title="Show QR Code"
+                >
+                  <QrCode className="h-3 w-3" />
+                </Button>
+              </div>
             ))}
           </div>
         )}
@@ -113,6 +131,14 @@ export function TableStatus() {
       </div>
 
       <TableManagementDialog open={managementOpen} onOpenChange={setManagementOpen} />
+      
+      {qrDialogTable !== null && (
+        <TableQRDialog 
+          open={qrDialogTable !== null} 
+          onOpenChange={(open) => !open && setQrDialogTable(null)}
+          tableNumber={qrDialogTable}
+        />
+      )}
     </>
   );
 }

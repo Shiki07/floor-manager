@@ -9,6 +9,7 @@ import { FinancesView } from "@/components/views/FinancesView";
 import { SettingsView } from "@/components/views/SettingsView";
 import { OrderTakingView } from "@/components/views/OrderTakingView";
 import { useSwipeRef } from "@/hooks/useSwipeNavigation";
+import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -27,6 +28,9 @@ type Tab = typeof tabs[number];
 const Index = () => {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+
+  // Enable real-time order notifications for staff
+  useRealtimeOrders();
 
   const navigateToTab = useCallback((direction: 'prev' | 'next') => {
     const currentIndex = tabs.indexOf(activeTab);
