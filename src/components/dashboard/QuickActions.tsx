@@ -16,9 +16,10 @@ import {
 
 interface QuickActionsProps {
   onNavigate?: (tab: string) => void;
+  onTakeOrder?: () => void;
 }
 
-export function QuickActions({ onNavigate }: QuickActionsProps) {
+export function QuickActions({ onNavigate, onTakeOrder }: QuickActionsProps) {
   const [reservationOpen, setReservationOpen] = useState(false);
   const [orderOpen, setOrderOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
@@ -27,7 +28,12 @@ export function QuickActions({ onNavigate }: QuickActionsProps) {
   const createOrder = useCreateOrder();
 
   const handleNewOrder = () => {
-    setOrderOpen(true);
+    // If we have a dedicated order taking view, use that
+    if (onTakeOrder) {
+      onTakeOrder();
+    } else {
+      setOrderOpen(true);
+    }
   };
 
   const handleReservation = () => {
