@@ -35,8 +35,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-      <main className="pl-64 min-h-screen">
-        <div className="p-8">
+      {/* Main content - responsive padding */}
+      <main className="min-h-screen pt-14 lg:pt-0 lg:pl-64">
+        <div className="p-4 sm:p-6 lg:p-8">
           {renderView()}
         </div>
       </main>
