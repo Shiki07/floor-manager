@@ -96,7 +96,9 @@ export function MenuItemDialog({ open, onOpenChange, menuItem, onSubmit, isLoadi
       setFormData({ ...formData, image_url: publicUrl });
       toast.success("Image uploaded successfully");
     } catch (error) {
-      console.error("Upload error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Upload error:", error);
+      }
       toast.error("Failed to upload image");
     } finally {
       setIsUploading(false);
