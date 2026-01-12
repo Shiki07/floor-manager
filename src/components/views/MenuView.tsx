@@ -114,7 +114,9 @@ export function MenuView() {
       queryClient.invalidateQueries({ queryKey: ["menu_items"] });
       toast.success(`Generated image for ${item.name}`);
     } catch (error) {
-      console.error("Error generating image:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error generating image:", error);
+      }
       toast.error(error instanceof Error ? error.message : "Failed to generate image");
     } finally {
       setGeneratingItemId(null);
