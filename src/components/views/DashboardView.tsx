@@ -6,6 +6,7 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { InventoryAlerts } from "@/components/dashboard/InventoryAlerts";
 import { OrdersChart } from "@/components/dashboard/OrdersChart";
 import { TableStatus } from "@/components/dashboard/TableStatus";
+import { LiveOrdersWidget } from "@/components/dashboard/LiveOrdersWidget";
 import { useStaffMembers } from "@/hooks/useStaffMembers";
 import { useReservations } from "@/hooks/useReservations";
 import { useMenuItems } from "@/hooks/useMenuItems";
@@ -76,6 +77,7 @@ export function DashboardView({ onTakeOrder }: DashboardViewProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
         {/* Charts - full width on mobile, spans 2 on tablet, 2 on desktop */}
         <div className="md:col-span-2 xl:col-span-2 space-y-4 md:space-y-5 lg:space-y-6">
+          <LiveOrdersWidget />
           <OrdersChart />
           <TableStatus />
         </div>
