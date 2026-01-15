@@ -22,6 +22,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface SidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  mobileOpen?: boolean;
+  onMobileOpenChange?: (open: boolean) => void;
 }
 
 const menuItems = [
@@ -34,11 +36,14 @@ const menuItems = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
+export function Sidebar({ activeTab, onTabChange, mobileOpen = false, onMobileOpenChange }: SidebarProps) {
   // Default to collapsed on tablets (portrait mode optimization)
   const [collapsed, setCollapsed] = useState(true);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const { user, userRole, signOut } = useAuth();
+  
+  const setMobileOpen = (open: boolean) => {
+    onMobileOpenChange?.(open);
+  };
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -94,23 +99,15 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         </div>
       </header>
 
-      {/* Mobile Overlay - semi-transparent to keep page visible */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] md:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300",
-          // Desktop/Tablet - always visible, z-50
-          "hidden md:block md:z-50",
+          "fixed left-0 top-0 z-50 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300",
+          // Desktop/Tablet - always visible
+          "hidden md:block",
           collapsed ? "md:w-20" : "md:w-64",
-          // Mobile - slide-in style with higher z-index than overlay, narrower width
-          mobileOpen && "block w-64 z-50 shadow-2xl"
+          // Mobile - push style, slides in from left
+          mobileOpen && "block w-64"
         )}
       >
         <div className="flex h-full flex-col">
