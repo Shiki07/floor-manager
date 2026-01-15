@@ -49,31 +49,16 @@ export function Sidebar({ activeTab, onTabChange, mobileOpen = false, onMobileOp
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   const roleLabel = userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : 'Staff';
 
-  // Close mobile sidebar when route changes
-  useEffect(() => {
+  // Close mobile sidebar when tab changes (user navigated)
+  const handleTabChange = (tab: string) => {
+    onTabChange(tab);
     setMobileOpen(false);
-  }, [activeTab]);
-
-  // Prevent body scroll when mobile sidebar is open
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [mobileOpen]);
+  };
 
   const handleSignOut = async () => {
     await signOut();
   };
 
-  const handleTabChange = (tab: string) => {
-    onTabChange(tab);
-    setMobileOpen(false);
-  };
 
   // Check if we're showing compact mode (collapsed on desktop/tablet or mobile overlay closed)
   const isCompact = collapsed && !mobileOpen;
