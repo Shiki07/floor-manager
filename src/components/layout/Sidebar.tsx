@@ -24,6 +24,8 @@ interface SidebarProps {
   onTabChange: (tab: string) => void;
   mobileOpen?: boolean;
   onMobileOpenChange?: (open: boolean) => void;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
 
 const menuItems = [
@@ -36,14 +38,25 @@ const menuItems = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar({ activeTab, onTabChange, mobileOpen = false, onMobileOpenChange }: SidebarProps) {
-  // Default to collapsed on tablets (portrait mode optimization)
-  const [collapsed, setCollapsed] = useState(true);
+export function Sidebar({ 
+  activeTab, 
+  onTabChange, 
+  mobileOpen = false, 
+  onMobileOpenChange,
+  collapsed: collapsedProp = true,
+  onCollapsedChange
+}: SidebarProps) {
   const { user, userRole, signOut } = useAuth();
   
   const setMobileOpen = (open: boolean) => {
     onMobileOpenChange?.(open);
   };
+
+  const setCollapsed = (value: boolean) => {
+    onCollapsedChange?.(value);
+  };
+
+  const collapsed = collapsedProp;
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);

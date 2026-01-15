@@ -29,6 +29,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   // Enable real-time order notifications for staff
   useRealtimeOrders();
@@ -113,6 +114,8 @@ const Index = () => {
         onTabChange={handleTabChange}
         mobileOpen={mobileMenuOpen}
         onMobileOpenChange={setMobileMenuOpen}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
       />
       {/* Main content - responsive padding for mobile/tablet portrait/tablet landscape/desktop */}
       <main 
@@ -122,8 +125,11 @@ const Index = () => {
           // Mobile: top padding for header, shrink the page when the menu is open
           "pt-14",
           mobileMenuOpen ? "ml-64 w-[calc(100%-16rem)]" : "ml-0 w-full",
-          // Tablet and up: left padding for sidebar (collapsed by default = 80px)
-          "md:pt-0 md:ml-0 md:w-full md:pl-20",
+          // Tablet and up: shrink page based on sidebar state
+          "md:pt-0",
+          sidebarCollapsed 
+            ? "md:ml-20 md:w-[calc(100%-5rem)]" 
+            : "md:ml-64 md:w-[calc(100%-16rem)]",
           swipeDirection === 'left' && "animate-slide-in-right",
           swipeDirection === 'right' && "animate-slide-in-left"
         )}
