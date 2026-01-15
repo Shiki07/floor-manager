@@ -28,6 +28,7 @@ type Tab = typeof tabs[number];
 const Index = () => {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Enable real-time order notifications for staff
   useRealtimeOrders();
@@ -107,14 +108,20 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar activeTab={sidebarActiveTab} onTabChange={handleTabChange} />
+      <Sidebar 
+        activeTab={sidebarActiveTab} 
+        onTabChange={handleTabChange}
+        mobileOpen={mobileMenuOpen}
+        onMobileOpenChange={setMobileMenuOpen}
+      />
       {/* Main content - responsive padding for mobile/tablet portrait/tablet landscape/desktop */}
       <main 
         ref={swipeRef}
         className={cn(
-          "min-h-screen transition-transform duration-300",
-          // Mobile: top padding for header
+          "min-h-screen transition-all duration-300",
+          // Mobile: top padding for header, push content when menu open
           "pt-14",
+          mobileMenuOpen ? "pl-64 md:pl-0" : "pl-0",
           // Tablet and up: left padding for sidebar (collapsed by default = 80px)
           "md:pt-0 md:pl-20",
           swipeDirection === 'left' && "animate-slide-in-right",
