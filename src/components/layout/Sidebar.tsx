@@ -94,10 +94,10 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         </div>
       </header>
 
-      {/* Mobile Overlay */}
+      {/* Mobile Overlay - semi-transparent to keep page visible */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -105,12 +105,12 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300",
-          // Desktop/Tablet - always visible
-          "hidden md:block",
+          "fixed left-0 top-0 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300",
+          // Desktop/Tablet - always visible, z-50
+          "hidden md:block md:z-50",
           collapsed ? "md:w-20" : "md:w-64",
-          // Mobile - overlay style
-          mobileOpen && "block w-72"
+          // Mobile - slide-in style with higher z-index than overlay, narrower width
+          mobileOpen && "block w-64 z-50 shadow-2xl"
         )}
       >
         <div className="flex h-full flex-col">
