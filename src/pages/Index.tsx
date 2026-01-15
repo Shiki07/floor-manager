@@ -118,12 +118,12 @@ const Index = () => {
       <main 
         ref={swipeRef}
         className={cn(
-          "min-h-screen transition-all duration-300",
-          // Mobile: top padding for header, push content when menu open
+          "min-h-screen overflow-x-hidden transition-all duration-300",
+          // Mobile: top padding for header, shrink the page when the menu is open
           "pt-14",
-          mobileMenuOpen ? "pl-64 md:pl-0" : "pl-0",
+          mobileMenuOpen ? "ml-64 w-[calc(100%-16rem)]" : "ml-0 w-full",
           // Tablet and up: left padding for sidebar (collapsed by default = 80px)
-          "md:pt-0 md:pl-20",
+          "md:pt-0 md:ml-0 md:w-full md:pl-20",
           swipeDirection === 'left' && "animate-slide-in-right",
           swipeDirection === 'right' && "animate-slide-in-left"
         )}

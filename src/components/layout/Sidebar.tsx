@@ -54,17 +54,6 @@ export function Sidebar({ activeTab, onTabChange, mobileOpen = false, onMobileOp
     setMobileOpen(false);
   }, [activeTab]);
 
-  // Prevent body scroll when mobile sidebar is open
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [mobileOpen]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -81,11 +70,17 @@ export function Sidebar({ activeTab, onTabChange, mobileOpen = false, onMobileOp
   return (
     <TooltipProvider delayDuration={0}>
       {/* Mobile Header - only on small screens */}
-      <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-sidebar border-b border-sidebar-border flex items-center px-4 md:hidden">
+      <header
+        className={cn(
+          "fixed top-0 z-50 h-14 bg-sidebar border-b border-sidebar-border flex items-center px-4 md:hidden transition-[left,right,width] duration-300",
+          // When the mobile sidebar is open, shrink/shift the header with the page
+          mobileOpen ? "left-64 right-0" : "left-0 right-0"
+        )}
+      >
         <button
-          onClick={() => setMobileOpen(true)}
+          onClick={() => setMobileOpen(!mobileOpen)}
           className="p-2 rounded-lg hover:bg-sidebar-accent transition-colors"
-          aria-label="Open menu"
+          aria-label={mobileOpen ? "Close menu" : "Open menu"}
         >
           <Menu className="h-5 w-5 text-foreground" />
         </button>
