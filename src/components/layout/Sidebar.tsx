@@ -82,12 +82,21 @@ export function Sidebar({
 
   return (
     <TooltipProvider delayDuration={0}>
-      {/* Mobile Header - only on small screens */}
+      {/* Mobile overlay backdrop - only on smartphones (below sm breakpoint) */}
+      {mobileOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 sm:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile Header - only on small screens (below md) */}
       <header
         className={cn(
           "fixed top-0 z-50 h-14 bg-sidebar border-b border-sidebar-border flex items-center px-4 md:hidden transition-[left,right,width] duration-300",
-          // When the mobile sidebar is open, shrink/shift the header with the page
-          mobileOpen ? "left-64 right-0" : "left-0 right-0"
+          // Smartphones (below sm): header stays full width (overlay mode)
+          // Tablets (sm to md): header shrinks with sidebar
+          mobileOpen ? "sm:left-64 sm:right-0 left-0 right-0" : "left-0 right-0"
         )}
       >
         <button
@@ -111,10 +120,13 @@ export function Sidebar({
       <aside
         className={cn(
           "fixed left-0 top-0 z-50 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300",
-          // Desktop/Tablet - always visible
+          // Desktop (md+) - always visible, collapsible
           "hidden md:block",
           collapsed ? "md:w-20" : "md:w-64",
-          // Mobile - push style, slides in from left
+          // Tablets (sm to md) - push style when open
+          "sm:block",
+          mobileOpen ? "sm:w-64" : "sm:w-0 sm:border-r-0",
+          // Smartphones (below sm) - overlay style when open
           mobileOpen && "block w-64"
         )}
       >

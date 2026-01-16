@@ -122,10 +122,13 @@ const Index = () => {
         ref={swipeRef}
         className={cn(
           "min-h-screen overflow-x-hidden transition-all duration-300",
-          // Mobile: top padding for header, shrink the page when the menu is open
-          "pt-14",
-          mobileMenuOpen ? "ml-64 w-[calc(100%-16rem)]" : "ml-0 w-full",
-          // Tablet and up: shrink page based on sidebar state
+          // Smartphones (below sm): overlay mode - content stays full width, top padding for header
+          "pt-14 ml-0 w-full",
+          // Tablets (sm to md): push mode - shrink page when menu is open
+          mobileMenuOpen 
+            ? "sm:ml-64 sm:w-[calc(100%-16rem)]" 
+            : "sm:ml-0 sm:w-full",
+          // Desktop (md+): push mode based on sidebar collapsed state
           "md:pt-0",
           sidebarCollapsed 
             ? "md:ml-20 md:w-[calc(100%-5rem)]" 
