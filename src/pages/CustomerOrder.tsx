@@ -29,8 +29,17 @@ interface CartItem {
   notes?: string;
 }
 
+// Validate table number: alphanumeric, hyphens, underscores only, max 20 chars
+const validateTableNumber = (tableNum: string | undefined): string => {
+  if (!tableNum) return "Unknown";
+  // Sanitize: only allow alphanumeric, hyphens, underscores
+  const sanitized = tableNum.replace(/[^0-9A-Za-z_-]/g, "").slice(0, 20);
+  return sanitized || "Unknown";
+};
+
 export default function CustomerOrder() {
-  const { tableNumber } = useParams<{ tableNumber: string }>();
+  const { tableNumber: rawTableNumber } = useParams<{ tableNumber: string }>();
+  const tableNumber = validateTableNumber(rawTableNumber);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -52,41 +61,33 @@ export default function CustomerOrder() {
     },
   });
 
-  // Create order mutation
+  // Create order mutation using edge function with rate limiting
   const createOrder = useMutation({
     mutationFn: async () => {
-      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      
-      // Create the order
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({ 
-          table_number: tableNumber || "Unknown", 
-          notes: orderNotes, 
-          total, 
-          status: "pending" 
-        })
-        .select()
-        .single();
-      
-      if (orderError) throw orderError;
-      
-      // Create order items
-      const orderItems = cart.map(item => ({
-        order_id: order.id,
+      const items = cart.map(item => ({
         menu_item_id: item.id,
         quantity: item.quantity,
         price: item.price,
         notes: item.notes,
       }));
-      
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-      
-      if (itemsError) throw itemsError;
-      
-      return order;
+
+      const response = await supabase.functions.invoke("create-order", {
+        body: {
+          table_number: tableNumber,
+          notes: orderNotes,
+          items,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to create order");
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      return response.data.order;
     },
     onSuccess: () => {
       setOrderPlaced(true);
