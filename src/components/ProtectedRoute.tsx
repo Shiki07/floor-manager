@@ -19,7 +19,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Redirect to auth if not logged in
   if (!session) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/landing" replace />;
   }
 
   // Check if user has a valid staff role (admin, manager, or staff)
